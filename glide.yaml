@@ -1,0 +1,8 @@
+package: gomud
+import:
+- package: github.com/rs/zerolog
+  subpackages:
+  - log
+- package: github.com/satori/go.uuid
+  version: ^1.1.0
+- package: github.com/orcaman/concurrent-map
