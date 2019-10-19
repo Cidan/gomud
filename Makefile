@@ -1,5 +1,5 @@
 build:
-	go build
-	go install
+	go build ./...
+	go install ./...
 run:
 	gomud
