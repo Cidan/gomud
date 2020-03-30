@@ -1,4 +1,4 @@
-package world
+package room
 
 type RoomData struct {
 	Name        string
@@ -12,7 +12,7 @@ type Room struct {
 	Data *RoomData
 }
 
-func NewRoom(data *RoomData) *Room {
+func New(data *RoomData) *Room {
 	return &Room{
 		Data: data,
 	}

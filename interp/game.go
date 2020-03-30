@@ -24,6 +24,9 @@ func init() {
 	}).Add(&Command{
 		name: "save",
 		Fn:   DoSave,
+	}).Add(&Command{
+		name: "quit",
+		Fn:   DoQuit,
 	})
 }
 
@@ -52,4 +55,10 @@ func DoSave(p *player.Player, args ...string) error {
 		p.Write("Your player has been saved.")
 	}
 	return err
+}
+
+func DoQuit(p *player.Player, args ...string) error {
+	p.Write("See ya!\n")
+	p.Stop()
+	return nil
 }

@@ -2,34 +2,32 @@ package atlas
 
 import (
 	"fmt"
-	"sync"
 
-	"github.com/Cidan/gomud/world"
+	"github.com/Cidan/gomud/room"
+	cmap "github.com/orcaman/concurrent-map"
 )
 
-var worldMap map[string]*world.Room
-var worldLock sync.RWMutex
+var worldMap cmap.ConcurrentMap
 
 func SetupWorld() {
-	worldMap = make(map[string]*world.Room)
+	worldMap = cmap.New()
 }
 
 func genRoomIndex(X, Y, Z int64) string {
 	return fmt.Sprintf("%d,%d,%d", X, Y, Z)
 }
 
-func getRoomIndex(r *world.Room) string {
+func getRoomIndex(r *room.Room) string {
 	return genRoomIndex(r.Data.X, r.Data.Y, r.Data.Z)
 }
 
-func GetRoom(X, Y, Z int64) *world.Room {
-	defer worldLock.RUnlock()
-	worldLock.RLock()
-	return worldMap[genRoomIndex(X, Y, Z)]
+func GetRoom(X, Y, Z int64) *room.Room {
+	if tmp, ok := worldMap.Get(genRoomIndex(X, Y, Z)); ok {
+		return tmp.(*room.Room)
+	}
+	return nil
 }
 
-func AddRoom(r *world.Room) {
-	defer worldLock.Unlock()
-	worldLock.Lock()
-	worldMap[getRoomIndex(r)] = r
+func AddRoom(r *room.Room) {
+	worldMap.Set(getRoomIndex(r), r)
 }

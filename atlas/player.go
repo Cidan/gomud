@@ -8,8 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var PlayerLocation [][][][]map[string]*player.Player
-
 func SetupPlayer() {
 }
 

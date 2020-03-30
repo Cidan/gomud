@@ -63,7 +63,7 @@ func (l *Login) AskName(text string) error {
 	// TODO: this is extremely unsafe.
 	data, err := ioutil.ReadFile("/tmp/" + text)
 	if err != nil {
-		l.p.Write("Are you sure you want to be known as %s?", text)
+		l.p.Write("Are you sure you want to be known as %s?\n", text)
 		l.p.Data.Name = text
 		return l.state.SetState("CONFIRM_NAME")
 	}
@@ -71,7 +71,7 @@ func (l *Login) AskName(text string) error {
 	if err != nil {
 		return err
 	}
-	l.p.Write("Password:")
+	l.p.Write("Password: ")
 	return l.state.SetState("ASK_PASSWORD")
 }
 
@@ -88,11 +88,11 @@ func (l *Login) AskPassword(text string) error {
 
 func (l *Login) ConfirmName(text string) error {
 	if text != "yes" && text != "y" {
-		l.p.Write("Okay, so what's your name?")
+		l.p.Write("Okay, so what's your name?\n")
 		return l.state.SetState("ASK_NAME")
 	}
 
-	l.p.Write("Welcome %s, please give me a password.", l.p.Data.Name)
+	l.p.Write("Welcome %s, please give me a password: ", l.p.Data.Name)
 	return l.state.SetState("NEW_PASSWORD")
 }
 
@@ -100,7 +100,7 @@ func (l *Login) NewPassword(text string) error {
 	// TODO: validate password
 	pw := hashPassword(text)
 	l.p.Data.Password = pw
-	l.p.Write("Confirm your password and type it again")
+	l.p.Write("Confirm your password and type it again: ")
 	return l.state.SetState("CONFIRM_PASSWORD")
 }
 
@@ -108,7 +108,7 @@ func (l *Login) ConfirmPassword(text string) error {
 	pw := hashPassword(text)
 	if pw != l.p.Data.Password {
 		l.p.Write("Passwords do not match\n")
-		l.p.Write("Let's, try this again. Please give me a new password.")
+		l.p.Write("Let's try this again. Please give me a new password: ")
 		return l.state.SetState("NEW_PASSWORD")
 	}
 	l.p.Write("Entering the world!")

@@ -5,8 +5,8 @@ import (
 
 	"github.com/Cidan/gomud/atlas"
 	"github.com/Cidan/gomud/player"
+	"github.com/Cidan/gomud/room"
 	"github.com/Cidan/gomud/server"
-	"github.com/Cidan/gomud/world"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,7 +22,7 @@ func main() {
 			Msg("New connection")
 		p := player.New()
 		p.SetConnection(c)
-		p.Write("Welcome, by what name are you known?")
+		p.Write("Welcome, by what name are you known?\n")
 		atlas.StartPlayer(p)
 	})
 
@@ -34,7 +34,7 @@ func main() {
 }
 
 func MakeDefaultRoom() {
-	r := world.NewRoom(&world.RoomData{
+	r := room.New(&room.RoomData{
 		Name:        "The Alpha",
 		Description: "It all starts here.",
 		X:           0,
