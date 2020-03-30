@@ -1,21 +1,19 @@
 package server
 
 import (
-	"errors"
 	"net"
 
+	"github.com/Cidan/gomud/atlas"
+	"github.com/Cidan/gomud/player"
 	"github.com/Cidan/gomud/util"
 
 	"github.com/rs/zerolog/log"
 )
 
-type ConnectionHandler func(net.Conn)
-
 // Server is a network server construct
 // that handles incoming player connections.
 type Server struct {
-	ln               net.Listener
-	handleConnection ConnectionHandler
+	listener net.Listener
 }
 
 // New Server
@@ -23,42 +21,41 @@ func New() *Server {
 	return &Server{}
 }
 
-func (s *Server) SetHandler(fn ConnectionHandler) {
-	s.handleConnection = fn
+func (s *Server) handleConnection(c net.Conn) {
+	log.Info().
+		Str("address", c.RemoteAddr().String()).
+		Msg("New connection")
+	p := player.New()
+	p.SetConnection(c)
+	p.Write("Welcome, by what name are you known?\n")
+	atlas.StartPlayer(p)
 }
 
 // Listen on a port for player connections.
 func (s *Server) Listen(port int) error {
-	if s.handleConnection == nil {
-		return errors.New("A connection handler must be specified before Listen() is called.")
-	}
 	l, err := net.Listen("tcp", ":4000")
 	if err != nil {
 		return err
 	}
-	s.ln = l
+	s.listener = l
 
-	// Create a channel for incoming connections.
-	newUserChan := make(chan net.Conn, 1)
-	go func() {
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				log.Error().Err(err)
-				continue
-			}
-			newUserChan <- c
-		}
-	}()
+	// Handle our exit
+	go s.onSigInt()
 
-	// Loop and select
+	// Loop for new connections
 	for {
-		select {
-		case c := <-newUserChan:
+		c, err := l.Accept()
+		if err != nil {
+			break
+		} else {
 			go s.handleConnection(c)
-		case <-util.SigIntChannel():
-			l.Close()
-			return nil
+			continue
 		}
 	}
+	return nil
+}
+
+func (s *Server) onSigInt() {
+	<-util.SigIntChannel()
+	s.listener.Close()
 }
