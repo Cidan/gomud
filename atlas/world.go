@@ -3,31 +3,31 @@ package atlas
 import (
 	"fmt"
 
-	"github.com/Cidan/gomud/room"
-	cmap "github.com/orcaman/concurrent-map"
+	"github.com/Cidan/gomud/types"
 )
 
-var worldMap cmap.ConcurrentMap
+var worldMap map[string]types.Room
 
 func SetupWorld() {
-	worldMap = cmap.New()
+	worldMap = make(map[string]types.Room)
 }
 
 func genRoomIndex(X, Y, Z int64) string {
 	return fmt.Sprintf("%d,%d,%d", X, Y, Z)
 }
 
-func getRoomIndex(r *room.Room) string {
-	return genRoomIndex(r.Data.X, r.Data.Y, r.Data.Z)
-}
-
-func GetRoom(X, Y, Z int64) *room.Room {
-	if tmp, ok := worldMap.Get(genRoomIndex(X, Y, Z)); ok {
-		return tmp.(*room.Room)
+func GetRoom(X, Y, Z int64) types.Room {
+	if room, ok := worldMap[genRoomIndex(X, Y, Z)]; ok {
+		return room
 	}
 	return nil
 }
 
-func AddRoom(r *room.Room) {
-	worldMap.Set(getRoomIndex(r), r)
+func AddRoom(r types.Room) {
+	worldMap[r.GetIndex()] = r
+}
+
+func IsRoom(X, Y, Z int64) types.Room {
+	room, _ := worldMap[genRoomIndex(X, Y, Z)]
+	return room
 }

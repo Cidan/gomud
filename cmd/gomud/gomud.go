@@ -19,12 +19,18 @@ func main() {
 }
 
 func makeDefaultRoom() {
-	r := room.New(&room.RoomData{
+	atlas.AddRoom(room.New(&room.RoomData{
 		Name:        "The Alpha",
 		Description: "It all starts here.",
 		X:           0,
 		Y:           0,
 		Z:           0,
-	})
-	atlas.AddRoom(r)
+	}))
+	atlas.AddRoom(room.New(&room.RoomData{
+		Name:        "The Omega",
+		Description: "It all ends here.",
+		X:           1,
+		Y:           0,
+		Z:           0,
+	}))
 }

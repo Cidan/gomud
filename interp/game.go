@@ -26,6 +26,30 @@ func init() {
 	}).Add(&command{
 		name: "quit",
 		Fn:   DoQuit,
+	}).Add(&command{
+		name:  "north",
+		alias: []string{"n"},
+		Fn:    DoNorth,
+	}).Add(&command{
+		name:  "east",
+		alias: []string{"e"},
+		Fn:    DoEast,
+	}).Add(&command{
+		name:  "south",
+		alias: []string{"s"},
+		Fn:    DoSouth,
+	}).Add(&command{
+		name:  "west",
+		alias: []string{"w"},
+		Fn:    DoWest,
+	}).Add(&command{
+		name:  "up",
+		alias: []string{"u"},
+		Fn:    DoUp,
+	}).Add(&command{
+		name:  "down",
+		alias: []string{"d"},
+		Fn:    DoDown,
 	})
 }
 
@@ -40,7 +64,12 @@ func NewGame(p types.Player) *Game {
 
 func (g *Game) Read(text string) error {
 	all := strings.SplitN(text, " ", 2)
-	log.Debug().Interface("command", all).Str("player", g.p.GetUUID()).Msg("Command")
+	log.
+		Debug().
+		Interface("command", all).
+		Str("player.uuid", g.p.GetUUID()).
+		Str("player.name", g.p.GetName()).
+		Msg("Command")
 	return gameCommands.Process(g.p, all[0], all[1:]...)
 }
 
@@ -68,5 +97,46 @@ func DoSave(p types.Player, args ...string) error {
 func DoQuit(p types.Player, args ...string) error {
 	p.Write("See ya!\n")
 	p.Stop()
+	return nil
+}
+
+// doDir for moving a player in a direction or through a portal.
+func doDir(p types.Player, dir string) {
+	target := p.GetRoom().LinkedRoom(dir)
+	if target != nil {
+		p.ToRoom(target)
+		p.Command("look")
+		return
+	}
+	p.Write("You can't go that way!")
+	return
+}
+
+func DoNorth(p types.Player, args ...string) error {
+	doDir(p, "north")
+	return nil
+}
+
+func DoEast(p types.Player, args ...string) error {
+	doDir(p, "east")
+	return nil
+}
+
+func DoSouth(p types.Player, args ...string) error {
+	doDir(p, "south")
+	return nil
+}
+
+func DoWest(p types.Player, args ...string) error {
+	doDir(p, "west")
+	return nil
+}
+
+func DoUp(p types.Player, args ...string) error {
+	doDir(p, "up")
+	return nil
+}
+func DoDown(p types.Player, args ...string) error {
+	doDir(p, "down")
 	return nil
 }

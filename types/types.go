@@ -36,4 +36,6 @@ type Interp interface {
 type Room interface {
 	GetName() string
 	GetDescription() string
+	GetIndex() string
+	LinkedRoom(string) Room
 }
