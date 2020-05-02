@@ -29,8 +29,8 @@ type Player struct {
 	connection net.Conn
 	input      *bufio.Reader
 	Data       *data
-	interp     interp.Interp
-	inRoom     *types.Room
+	interp     types.Interp
+	inRoom     types.Room
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -85,7 +85,7 @@ func (p *Player) SetConnection(c net.Conn) {
 }
 
 // SetInterp for a player.
-func (p *Player) SetInterp(i interp.Interp) {
+func (p *Player) SetInterp(i types.Interp) {
 	p.interp = i
 }
 
@@ -130,6 +130,18 @@ func (p *Player) Load() (bool, error) {
 // Stop a player connection and unload the player from the world.
 func (p *Player) Stop() {
 	p.connection.Close()
+}
+
+// ToRoom moves a player to a room
+// TODO: Eventually, unwind combat, etc.
+func (p *Player) ToRoom(target types.Room) bool {
+	p.inRoom = target
+	return true
+}
+
+// Command runs a command through the interp for the player.
+func (p *Player) Command(cmd string) error {
+	return p.interp.Read(cmd)
 }
 
 // GetUUID of a player.

@@ -1,6 +1,8 @@
 package interp
 
-type commandCallback func(player, ...string) error
+import "github.com/Cidan/gomud/types"
+
+type commandCallback func(types.Player, ...string) error
 
 type command struct {
 	name  string
@@ -32,7 +34,7 @@ func (c *commandMap) Add(nc *command) *commandMap {
 	return c
 }
 
-func (c *commandMap) Process(p player, command string, input ...string) error {
+func (c *commandMap) Process(p types.Player, command string, input ...string) error {
 	if c.commands[command] != nil {
 		return c.commands[command].Fn(p, input...)
 	}

@@ -3,12 +3,13 @@ package interp
 import (
 	"strings"
 
+	"github.com/Cidan/gomud/types"
 	"github.com/rs/zerolog/log"
 )
 
 // Game interp for handling user login
 type Game struct {
-	p player
+	p types.Player
 }
 
 var gameCommands *commandMap
@@ -30,7 +31,7 @@ func init() {
 
 // NewGame interp for a player. This is the main game state interp
 // for which all gameplay commands are run.
-func NewGame(p player) *Game {
+func NewGame(p types.Player) *Game {
 	g := &Game{
 		p: p,
 	}
@@ -46,13 +47,13 @@ func (g *Game) Read(text string) error {
 // Commands go under here.
 
 // DoLook Look at the current room, an object, a player, or an NPC
-func DoLook(p player, args ...string) error {
+func DoLook(p types.Player, args ...string) error {
 	p.Write("You can't see anything. %s", args)
 	return nil
 }
 
 // DoSave will save a player to durable storage.
-func DoSave(p player, args ...string) error {
+func DoSave(p types.Player, args ...string) error {
 	err := p.Save()
 	if err == nil {
 		p.Write("Your player has been saved.")
@@ -61,7 +62,7 @@ func DoSave(p player, args ...string) error {
 }
 
 // DoQuit will exit the player from the game world.
-func DoQuit(p player, args ...string) error {
+func DoQuit(p types.Player, args ...string) error {
 	p.Write("See ya!\n")
 	p.Stop()
 	return nil
