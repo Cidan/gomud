@@ -1,28 +1,26 @@
 package interp
 
-import "github.com/Cidan/gomud/player"
+type commandCallback func(player, ...string) error
 
-type CommandCallback func(*player.Player, ...string) error
-
-type Command struct {
+type command struct {
 	name  string
 	alias []string
 	state []string
-	Fn    CommandCallback
+	Fn    commandCallback
 }
 
-// Commands is the top level object for commands
-type CommandMap struct {
-	commands map[string]*Command
+// CommandMap is the top level object for commands
+type commandMap struct {
+	commands map[string]*command
 }
 
-func NewCommands() *CommandMap {
-	return &CommandMap{
-		commands: make(map[string]*Command),
+func newCommands() *commandMap {
+	return &commandMap{
+		commands: make(map[string]*command),
 	}
 }
 
-func (c *CommandMap) Add(nc *Command) *CommandMap {
+func (c *commandMap) Add(nc *command) *commandMap {
 	if nc.name == "" {
 		panic("Command added with a blank name. Fix this.")
 	}
@@ -34,7 +32,7 @@ func (c *CommandMap) Add(nc *Command) *CommandMap {
 	return c
 }
 
-func (c *CommandMap) Process(p *player.Player, command string, input ...string) error {
+func (c *commandMap) Process(p player, command string, input ...string) error {
 	if c.commands[command] != nil {
 		return c.commands[command].Fn(p, input...)
 	}

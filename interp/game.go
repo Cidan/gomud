@@ -3,53 +3,56 @@ package interp
 import (
 	"strings"
 
-	"github.com/Cidan/gomud/player"
-
 	"github.com/rs/zerolog/log"
 )
 
 // Game interp for handling user login
 type Game struct {
-	p *player.Player
+	p player
 }
 
-var GameCommands *CommandMap
+var gameCommands *commandMap
 
 func init() {
-	GameCommands = NewCommands()
-	GameCommands.Add(&Command{
+	gameCommands = newCommands()
+	gameCommands.Add(&command{
 		name:  "look",
 		alias: []string{"l"},
 		Fn:    DoLook,
-	}).Add(&Command{
+	}).Add(&command{
 		name: "save",
 		Fn:   DoSave,
-	}).Add(&Command{
+	}).Add(&command{
 		name: "quit",
 		Fn:   DoQuit,
 	})
 }
 
-func NewGame(p *player.Player) *Game {
-	g := &Game{p: p}
+// NewGame interp for a player. This is the main game state interp
+// for which all gameplay commands are run.
+func NewGame(p player) *Game {
+	g := &Game{
+		p: p,
+	}
 	return g
 }
 
 func (g *Game) Read(text string) error {
 	all := strings.SplitN(text, " ", 2)
-	log.Debug().Interface("command", all).Str("player", g.p.Data.UUID).Msg("Command")
-	return GameCommands.Process(g.p, all[0], all[1:]...)
+	log.Debug().Interface("command", all).Str("player", g.p.GetUUID()).Msg("Command")
+	return gameCommands.Process(g.p, all[0], all[1:]...)
 }
 
 // Commands go under here.
 
 // DoLook Look at the current room, an object, a player, or an NPC
-func DoLook(p *player.Player, args ...string) error {
+func DoLook(p player, args ...string) error {
 	p.Write("You can't see anything. %s", args)
 	return nil
 }
 
-func DoSave(p *player.Player, args ...string) error {
+// DoSave will save a player to durable storage.
+func DoSave(p player, args ...string) error {
 	err := p.Save()
 	if err == nil {
 		p.Write("Your player has been saved.")
@@ -57,7 +60,8 @@ func DoSave(p *player.Player, args ...string) error {
 	return err
 }
 
-func DoQuit(p *player.Player, args ...string) error {
+// DoQuit will exit the player from the game world.
+func DoQuit(p player, args ...string) error {
 	p.Write("See ya!\n")
 	p.Stop()
 	return nil

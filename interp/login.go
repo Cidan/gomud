@@ -1,23 +1,17 @@
 package interp
 
 import (
-	"crypto/sha512"
-	"encoding/hex"
-	"encoding/json"
-	"io"
-	"io/ioutil"
-
-	"github.com/Cidan/gomud/player"
 	"github.com/Cidan/gomud/state"
 )
 
 // Login interp for handling user login
 type Login struct {
-	p     *player.Player
+	p     player
 	state *state.State
 }
 
-func NewLogin(p *player.Player) *Login {
+// NewLogin interp, to handle user login and character creation.
+func NewLogin(p player) *Login {
 	l := &Login{p: p}
 
 	// Create our state flow
@@ -47,72 +41,69 @@ func NewLogin(p *player.Player) *Login {
 	return l
 }
 
-func hashPassword(pw string) string {
-	h := sha512.New()
-	io.WriteString(h, pw)
-	return hex.EncodeToString(h.Sum(nil))
-}
-
 func (l *Login) Read(text string) error {
 	return l.state.Process(text)
 }
 
+// AskName step.
 func (l *Login) AskName(text string) error {
 	// Check for save
 	// TODO: Validate name
 	// TODO: this is extremely unsafe.
-	data, err := ioutil.ReadFile("/tmp/" + text)
-	if err != nil {
+	l.p.SetName(text)
+	loaded, err := l.p.Load()
+	if err == nil && !loaded {
 		l.p.Write("Are you sure you want to be known as %s?\n", text)
-		l.p.Data.Name = text
 		return l.state.SetState("CONFIRM_NAME")
 	}
-	err = json.Unmarshal(data, &l.p.Data)
 	if err != nil {
-		return err
+		l.p.Write("Something went wrong trying to load your pfile.")
+		l.p.Stop()
 	}
 	l.p.Write("Password: ")
 	return l.state.SetState("ASK_PASSWORD")
 }
 
+// AskPassword step.
 func (l *Login) AskPassword(text string) error {
-	if l.p.Data.Password != hashPassword(text) {
+	if !l.p.IsPassword(text) {
 		l.p.Write("Wrong password. Bye.")
 		l.p.Stop()
 		return nil
 	}
 	l.p.Write("Entering the world!")
-	l.p.Interp = NewGame(l.p)
+	l.p.SetInterp(NewGame(l.p))
 	return nil
 }
 
+// ConfirmName step.
 func (l *Login) ConfirmName(text string) error {
 	if text != "yes" && text != "y" {
 		l.p.Write("Okay, so what's your name?\n")
 		return l.state.SetState("ASK_NAME")
 	}
 
-	l.p.Write("Welcome %s, please give me a password: ", l.p.Data.Name)
+	l.p.Write("Welcome %s, please give me a password: ", l.p.GetName())
 	return l.state.SetState("NEW_PASSWORD")
 }
 
+// NewPassword step.
 func (l *Login) NewPassword(text string) error {
 	// TODO: validate password
-	pw := hashPassword(text)
-	l.p.Data.Password = pw
+	l.p.SetPassword(text)
 	l.p.Write("Confirm your password and type it again: ")
 	return l.state.SetState("CONFIRM_PASSWORD")
 }
 
+// ConfirmPassword step.
 func (l *Login) ConfirmPassword(text string) error {
-	pw := hashPassword(text)
-	if pw != l.p.Data.Password {
+	if !l.p.IsPassword(text) {
 		l.p.Write("Passwords do not match\n")
 		l.p.Write("Let's try this again. Please give me a new password: ")
 		return l.state.SetState("NEW_PASSWORD")
 	}
 	l.p.Write("Entering the world!")
-	l.p.Interp = NewGame(l.p)
+	l.p.SetInterp(NewGame(l.p))
 
 	return nil
 }

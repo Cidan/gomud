@@ -3,7 +3,6 @@ package server
 import (
 	"net"
 
-	"github.com/Cidan/gomud/atlas"
 	"github.com/Cidan/gomud/player"
 	"github.com/Cidan/gomud/util"
 
@@ -26,14 +25,13 @@ func (s *Server) handleConnection(c net.Conn) {
 		Str("address", c.RemoteAddr().String()).
 		Msg("New connection")
 	p := player.New()
+	// This blocks as it starts the interp loop
 	p.SetConnection(c)
-	p.Write("Welcome, by what name are you known?\n")
-	atlas.StartPlayer(p)
 }
 
 // Listen on a port for player connections.
 func (s *Server) Listen(port int) error {
-	l, err := net.Listen("tcp", ":4000")
+	l, err := net.Listen("tcp", ":8090")
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 
 func main() {
 	atlas.SetupWorld()
-	atlas.SetupPlayer()
 	MakeDefaultRoom()
 	server := server.New()
 	log.Info().Msg("Gomud listening on port 4000.")

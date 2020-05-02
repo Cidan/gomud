@@ -1,7 +1,9 @@
 package state
 
-import "errors"
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type EventCallback func(string) error
 
