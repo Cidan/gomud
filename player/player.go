@@ -64,7 +64,7 @@ func (p *Player) SetConnection(c net.Conn) {
 	// TODO: Eventually split this line out to another function.
 	p.SetInterp(interp.NewLogin(p))
 
-	p.Write("Welcome, by what name are you known?\n")
+	p.Write("Welcome, by what name are you known?")
 
 	for {
 		str, err := p.input.ReadString('\n')

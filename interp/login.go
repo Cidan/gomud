@@ -53,7 +53,7 @@ func (l *Login) AskName(text string) error {
 	l.p.SetName(text)
 	loaded, err := l.p.Load()
 	if err == nil && !loaded {
-		l.p.Write("Are you sure you want to be known as %s?\n", text)
+		l.p.Write("Are you sure you want to be known as %s?", text)
 		return l.state.SetState("CONFIRM_NAME")
 	}
 	if err != nil {
@@ -79,7 +79,7 @@ func (l *Login) AskPassword(text string) error {
 // ConfirmName step.
 func (l *Login) ConfirmName(text string) error {
 	if text != "yes" && text != "y" {
-		l.p.Write("Okay, so what's your name?\n")
+		l.p.Write("Okay, so what's your name?")
 		return l.state.SetState("ASK_NAME")
 	}
 
