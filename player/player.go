@@ -31,6 +31,7 @@ type Player struct {
 	Data       *data
 	interp     types.Interp
 	inRoom     types.Room
+	textBuffer string
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -87,6 +88,17 @@ func (p *Player) SetConnection(c net.Conn) {
 // SetInterp for a player.
 func (p *Player) SetInterp(i types.Interp) {
 	p.interp = i
+}
+
+// Buffer will buffer output text until FlushText() is called.
+func (p *Player) Buffer(text string, args ...interface{}) {
+	p.textBuffer += fmt.Sprintf(text, args...)
+}
+
+// Flush will write the player buffer to the player and clear the buffer.
+func (p *Player) Flush() {
+	fmt.Fprint(p.connection, p.textBuffer)
+	p.textBuffer = ""
 }
 
 // Write output to a player.
@@ -169,4 +181,9 @@ func (p *Player) IsPassword(password string) bool {
 func (p *Player) SetPassword(password string) {
 	p.Data.Password = hashPassword(password)
 	return
+}
+
+// GetRoom returns the room the player is currently in
+func (p *Player) GetRoom() types.Room {
+	return p.inRoom
 }

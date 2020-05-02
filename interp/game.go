@@ -48,7 +48,10 @@ func (g *Game) Read(text string) error {
 
 // DoLook Look at the current room, an object, a player, or an NPC
 func DoLook(p types.Player, args ...string) error {
-	p.Write("You can't see anything. %s", args)
+	room := p.GetRoom()
+	p.Buffer("\n\n%s\n\n", room.GetName())
+	p.Buffer("  %s\n", room.GetDescription())
+	p.Flush()
 	return nil
 }
 

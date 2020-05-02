@@ -21,3 +21,7 @@ func New(data *RoomData) *Room {
 func (r *Room) GetName() string {
 	return r.Data.Name
 }
+
+func (r *Room) GetDescription() string {
+	return r.Data.Description
+}
