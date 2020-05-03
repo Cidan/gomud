@@ -1,13 +1,17 @@
 package room
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/Cidan/gomud/atlas"
 	"github.com/Cidan/gomud/types"
+	uuid "github.com/satori/go.uuid"
 )
 
-type RoomData struct {
+type Data struct {
+	UUID        string
 	Name        string
 	Description string
 	X           int64
@@ -16,10 +20,12 @@ type RoomData struct {
 }
 
 type Room struct {
-	Data *RoomData
+	Data *Data
 }
 
-func New(data *RoomData) *Room {
+func New(data *Data) *Room {
+	data.UUID = uuid.NewV4().String()
+
 	return &Room{
 		Data: data,
 	}
@@ -36,8 +42,17 @@ func (r *Room) GetDescription() string {
 func (r *Room) GetIndex() string {
 	return fmt.Sprintf("%d,%d,%d", r.Data.X, r.Data.Y, r.Data.Z)
 }
-func (r *Room) GetExits() {
 
+func (r *Room) Save() error {
+	data, err := json.Marshal(r.Data)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("/tmp/rooms/"+r.Data.UUID, data, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // LinkedRoom returns a room to which this room can traverse to using

@@ -90,7 +90,7 @@ func (p *Player) SetInterp(i types.Interp) {
 	p.interp = i
 }
 
-// Buffer will buffer output text until FlushText() is called.
+// Buffer will buffer output text until Flush() is called.
 func (p *Player) Buffer(text string, args ...interface{}) {
 	p.textBuffer += fmt.Sprintf(text, args...)
 }

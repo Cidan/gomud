@@ -2,14 +2,27 @@ package atlas
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/Cidan/gomud/types"
 )
 
 var worldMap map[string]types.Room
 
-func SetupWorld() {
-	worldMap = make(map[string]types.Room)
+func LoadWorld() error {
+	if worldMap == nil {
+		worldMap = make(map[string]types.Room)
+	}
+
+	files, err := ioutil.ReadDir("/tmp/rooms/")
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		file.Name()
+	}
+	return nil
 }
 
 func genRoomIndex(X, Y, Z int64) string {
