@@ -10,6 +10,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// Data struct for a room. This data is saved to durable storage when a room is
+// saved.
 type Data struct {
 	UUID        string
 	Name        string
@@ -19,10 +21,34 @@ type Data struct {
 	Z           int64
 }
 
+// Room is the top level struct for a room.
 type Room struct {
 	Data *Data
 }
 
+// LoadAll loads all the rooms in the world.
+func LoadAll() error {
+	files, err := ioutil.ReadDir("/tmp/rooms/")
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		data, err := ioutil.ReadFile("/tmp/rooms/" + file.Name())
+		if err != nil {
+			return err
+		}
+		var roomData Data
+		err = json.Unmarshal(data, &roomData)
+		if err != nil {
+			return err
+		}
+		atlas.AddRoom(New(&roomData))
+	}
+	return nil
+}
+
+// New room construct.
 func New(data *Data) *Room {
 	data.UUID = uuid.NewV4().String()
 
@@ -31,18 +57,22 @@ func New(data *Data) *Room {
 	}
 }
 
+// GetName returns the human readable name of a room.
 func (r *Room) GetName() string {
 	return r.Data.Name
 }
 
+// GetDescription returns the human readable description of the room.
 func (r *Room) GetDescription() string {
 	return r.Data.Description
 }
 
+// GetIndex gets the room index as a string.
 func (r *Room) GetIndex() string {
 	return fmt.Sprintf("%d,%d,%d", r.Data.X, r.Data.Y, r.Data.Z)
 }
 
+// Save a room to durable storage.
 func (r *Room) Save() error {
 	data, err := json.Marshal(r.Data)
 	if err != nil {
