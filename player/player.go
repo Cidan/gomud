@@ -61,7 +61,10 @@ func New() *Player {
 func (p *Player) SetConnection(c net.Conn) {
 	p.connection = c
 	p.input = bufio.NewReader(c)
+}
 
+// Start this player and their interp loop.
+func (p *Player) Start() {
 	// TODO: Eventually split this line out to another function.
 	p.SetInterp(interp.NewLogin(p))
 

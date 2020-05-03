@@ -13,22 +13,24 @@ func main() {
 		panic(err)
 	}
 
-	makeDefaultRoom()
-
 	err = room.LoadAll()
 	if err != nil {
 		panic(err)
 	}
 
+	if atlas.WorldSize() == 0 {
+		makeDefaultRoomSet()
+	}
+
 	server := server.New()
 	log.Info().Msg("Gomud listening on port 4000.")
-	if err := server.Listen(4000); err != nil {
+	if err := server.Listen(8090); err != nil {
 		log.Panic().Err(err).Msg("Error while listening for new connections.")
 	}
 	log.Info().Msg("Server shutting down.")
 }
 
-func makeDefaultRoom() {
+func makeDefaultRoomSet() {
 	atlas.AddRoom(room.New(&room.Data{
 		Name:        "The Alpha",
 		Description: "It all starts here.",

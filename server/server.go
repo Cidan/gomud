@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/Cidan/gomud/player"
@@ -25,13 +26,14 @@ func (s *Server) handleConnection(c net.Conn) {
 		Str("address", c.RemoteAddr().String()).
 		Msg("New connection")
 	p := player.New()
-	// This blocks as it starts the interp loop
 	p.SetConnection(c)
+	// This blocks as it starts the interp loop
+	p.Start()
 }
 
 // Listen on a port for player connections.
 func (s *Server) Listen(port int) error {
-	l, err := net.Listen("tcp", ":8090")
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return err
 	}
