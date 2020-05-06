@@ -28,7 +28,7 @@ func hashPassword(pw string) string {
 type Player struct {
 	connection net.Conn
 	input      *bufio.Reader
-	Data       *data
+	Data       *playerData
 	interp     types.Interp
 	inRoom     types.Room
 	textBuffer string
@@ -39,7 +39,7 @@ type Player struct {
 // use this field as storage for temporary variables. Use the Player struct
 // above for temporary data that does not need to be saved.
 // Additionally, all player fields must be exported in order to be saved.
-type data struct {
+type playerData struct {
 	UUID     string
 	Name     string
 	Password string
@@ -49,7 +49,7 @@ type data struct {
 func NewPlayer() *Player {
 
 	p := &Player{
-		Data: &data{
+		Data: &playerData{
 			UUID: uuid.NewV4().String(),
 		},
 	}
