@@ -45,7 +45,7 @@ type data struct {
 	Password string
 }
 
-// New player
+// NewPlayer constructs a new player
 func NewPlayer() *Player {
 
 	p := &Player{

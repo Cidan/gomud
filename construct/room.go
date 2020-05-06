@@ -11,7 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// Data struct for a room. This data is saved to durable storage when a room is
+// RoomData struct for a room. This data is saved to durable storage when a room is
 // saved.
 type RoomData struct {
 	UUID        string
@@ -27,7 +27,7 @@ type Room struct {
 	Data *RoomData
 }
 
-// LoadAll loads all the rooms in the world.
+// LoadRooms loads all the rooms in the world.
 func LoadRooms() error {
 	files, err := ioutil.ReadDir("/tmp/rooms/")
 	if err != nil {
@@ -49,7 +49,7 @@ func LoadRooms() error {
 	return nil
 }
 
-// New room construct.
+// NewRoom construct.
 func NewRoom(data *RoomData) *Room {
 	data.UUID = uuid.NewV4().String()
 
