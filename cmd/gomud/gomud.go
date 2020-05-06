@@ -31,18 +31,28 @@ func main() {
 }
 
 func makeDefaultRoomSet() {
-	atlas.AddRoom(construct.NewRoom(&construct.RoomData{
+	room := construct.NewRoom(&construct.RoomData{
 		Name:        "The Alpha",
 		Description: "It all starts here.",
 		X:           0,
 		Y:           0,
 		Z:           0,
-	}))
-	atlas.AddRoom(construct.NewRoom(&construct.RoomData{
+	})
+	err := room.Save()
+	if err != nil {
+		panic(err)
+	}
+	atlas.AddRoom(room)
+	room = construct.NewRoom(&construct.RoomData{
 		Name:        "The Omega",
 		Description: "It all ends here.",
 		X:           1,
 		Y:           0,
 		Z:           0,
-	}))
+	})
+	err = room.Save()
+	if err != nil {
+		panic(err)
+	}
+	atlas.AddRoom(room)
 }

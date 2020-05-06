@@ -7,6 +7,7 @@ import (
 
 	"github.com/Cidan/gomud/atlas"
 	"github.com/Cidan/gomud/types"
+	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -32,7 +33,6 @@ func LoadRooms() error {
 	if err != nil {
 		return err
 	}
-
 	for _, file := range files {
 		data, err := ioutil.ReadFile("/tmp/rooms/" + file.Name())
 		if err != nil {
@@ -43,6 +43,7 @@ func LoadRooms() error {
 		if err != nil {
 			return err
 		}
+		log.Debug().Str("name", roomData.Name).Msg("loaded room")
 		atlas.AddRoom(NewRoom(&roomData))
 	}
 	return nil
