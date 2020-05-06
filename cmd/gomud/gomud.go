@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/Cidan/gomud/atlas"
-	"github.com/Cidan/gomud/room"
+	"github.com/Cidan/gomud/construct"
 	"github.com/Cidan/gomud/server"
 	"github.com/rs/zerolog/log"
 )
@@ -13,7 +13,7 @@ func main() {
 		panic(err)
 	}
 
-	err = room.LoadAll()
+	err = construct.LoadRooms()
 	if err != nil {
 		panic(err)
 	}
@@ -31,14 +31,14 @@ func main() {
 }
 
 func makeDefaultRoomSet() {
-	atlas.AddRoom(room.New(&room.Data{
+	atlas.AddRoom(construct.NewRoom(&construct.RoomData{
 		Name:        "The Alpha",
 		Description: "It all starts here.",
 		X:           0,
 		Y:           0,
 		Z:           0,
 	}))
-	atlas.AddRoom(room.New(&room.Data{
+	atlas.AddRoom(construct.NewRoom(&construct.RoomData{
 		Name:        "The Omega",
 		Description: "It all ends here.",
 		X:           1,

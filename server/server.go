@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Cidan/gomud/player"
+	"github.com/Cidan/gomud/construct"
 	"github.com/Cidan/gomud/util"
 
 	"github.com/rs/zerolog/log"
@@ -25,7 +25,7 @@ func (s *Server) handleConnection(c net.Conn) {
 	log.Info().
 		Str("address", c.RemoteAddr().String()).
 		Msg("New connection")
-	p := player.New()
+	p := construct.NewPlayer()
 	p.SetConnection(c)
 	// This blocks as it starts the interp loop
 	p.Start()

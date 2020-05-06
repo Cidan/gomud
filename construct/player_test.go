@@ -1,4 +1,4 @@
-package player
+package construct
 
 import (
 	"bufio"
@@ -20,7 +20,7 @@ func TestPlayer(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	p := New()
+	p := NewPlayer()
 	assert.NotNil(t, p)
 	server := server.New()
 	go server.Listen(2000, func(c net.Conn) {

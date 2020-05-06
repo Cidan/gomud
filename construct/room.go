@@ -1,4 +1,4 @@
-package room
+package construct
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 
 // Data struct for a room. This data is saved to durable storage when a room is
 // saved.
-type Data struct {
+type RoomData struct {
 	UUID        string
 	Name        string
 	Description string
@@ -23,11 +23,11 @@ type Data struct {
 
 // Room is the top level struct for a room.
 type Room struct {
-	Data *Data
+	Data *RoomData
 }
 
 // LoadAll loads all the rooms in the world.
-func LoadAll() error {
+func LoadRooms() error {
 	files, err := ioutil.ReadDir("/tmp/rooms/")
 	if err != nil {
 		return err
@@ -38,18 +38,18 @@ func LoadAll() error {
 		if err != nil {
 			return err
 		}
-		var roomData Data
+		var roomData RoomData
 		err = json.Unmarshal(data, &roomData)
 		if err != nil {
 			return err
 		}
-		atlas.AddRoom(New(&roomData))
+		atlas.AddRoom(NewRoom(&roomData))
 	}
 	return nil
 }
 
 // New room construct.
-func New(data *Data) *Room {
+func NewRoom(data *RoomData) *Room {
 	data.UUID = uuid.NewV4().String()
 
 	return &Room{

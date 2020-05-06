@@ -1,4 +1,4 @@
-package player
+package construct
 
 import (
 	"bufio"
@@ -46,7 +46,7 @@ type data struct {
 }
 
 // New player
-func New() *Player {
+func NewPlayer() *Player {
 
 	p := &Player{
 		Data: &data{
