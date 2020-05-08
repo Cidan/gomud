@@ -42,3 +42,8 @@ func (c *commandMap) Process(p types.Player, command string, input ...string) er
 	p.Write("Huh?")
 	return nil
 }
+
+func (c *commandMap) Has(command string) bool {
+	_, ok := c.commands[command]
+	return ok
+}

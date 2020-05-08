@@ -27,6 +27,9 @@ func init() {
 		name: "quit",
 		Fn:   DoQuit,
 	}).Add(&command{
+		name: "build",
+		Fn:   DoBuild,
+	}).Add(&command{
 		name:  "north",
 		alias: []string{"n"},
 		Fn:    DoNorth,
@@ -97,6 +100,13 @@ func DoSave(p types.Player, args ...string) error {
 func DoQuit(p types.Player, args ...string) error {
 	p.Write("See ya!\n")
 	p.Stop()
+	return nil
+}
+
+// DoBuild enables build mode for the player.
+func DoBuild(p types.Player, args ...string) error {
+	p.Write("Entering build mode\n")
+	p.SetInterp(NewBuild(p))
 	return nil
 }
 
