@@ -16,9 +16,8 @@ var buildCommands *commandMap
 func init() {
 	buildCommands = newCommands()
 	buildCommands.Add(&command{
-		name:  "look",
-		alias: []string{"l"},
-		Fn:    DoLook,
+		name: "dig",
+		Fn:   DoDig,
 	})
 }
 
@@ -43,4 +42,34 @@ func (b *Build) Read(text string) error {
 	}
 
 	return gameCommands.Process(b.p, all[0], all[1:]...)
+}
+
+func doDigDir(p types.Player, dir string) error {
+	p.Write("Not yet implemented.\n")
+	return nil
+}
+
+// DoDig will create a new room in the direction the player specifies.
+func DoDig(p types.Player, args ...string) error {
+	if len(args) == 0 || args[0] == "" {
+		p.Write("Which direction do you want to dig?")
+		return nil
+	}
+	switch args[0] {
+	case "north", "n":
+		return doDigDir(p, "north")
+	case "east", "e":
+		return doDigDir(p, "east")
+	case "south", "s":
+		return doDigDir(p, "south")
+	case "west", "w":
+		return doDigDir(p, "west")
+	case "up", "u":
+		return doDigDir(p, "up")
+	case "down", "d":
+		return doDigDir(p, "down")
+	default:
+		p.Write("That's not a valid direction to dig in.")
+		return nil
+	}
 }
