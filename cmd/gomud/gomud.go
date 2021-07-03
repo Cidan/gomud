@@ -24,7 +24,7 @@ func main() {
 
 	server := server.New()
 	log.Info().Msg("Gomud listening on port 4000.")
-	if err := server.Listen(8090); err != nil {
+	if err := server.Listen(4000); err != nil {
 		log.Panic().Err(err).Msg("Error while listening for new connections.")
 	}
 	log.Info().Msg("Server shutting down.")
