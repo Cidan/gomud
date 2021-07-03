@@ -17,6 +17,7 @@ type RoomData struct {
 	UUID        string
 	Name        string
 	Description string
+	Players     []*Player
 	X           int64
 	Y           int64
 	Z           int64
@@ -104,4 +105,8 @@ func (r *Room) LinkedRoom(dir string) types.Room {
 		return atlas.IsRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
 	}
 	return nil
+}
+
+func (r *Room) AddPlayer(player *Player) {
+
 }

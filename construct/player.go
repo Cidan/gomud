@@ -11,7 +11,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/Cidan/gomud/interp"
 	"github.com/Cidan/gomud/types"
 	"github.com/rs/zerolog/log"
 
@@ -66,7 +65,7 @@ func (p *Player) SetConnection(c net.Conn) {
 // Start this player and their interp loop.
 func (p *Player) Start() {
 	// TODO: Eventually split this line out to another function.
-	p.SetInterp(interp.NewLogin(p))
+	p.SetInterp(NewLogin(p))
 
 	p.Write("Welcome, by what name are you known?")
 
