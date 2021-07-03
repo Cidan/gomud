@@ -55,9 +55,9 @@ func init() {
 	})
 }
 
-// NewGame interp for a player. This is the main game state interp
+// NewGameInterp interp for a player. This is the main game state interp
 // for which all gameplay commands are run.
-func NewGame(p *Player) *Game {
+func NewGameInterp(p *Player) *Game {
 	g := &Game{
 		p: p,
 	}
@@ -105,7 +105,7 @@ func DoQuit(p *Player, args ...string) error {
 // DoBuild enables build mode for the player.
 func DoBuild(p *Player, args ...string) error {
 	p.Write("Entering build mode\n")
-	p.SetInterp(NewBuild(p))
+	p.SetInterp(NewBuildInterp(p))
 	return nil
 }
 

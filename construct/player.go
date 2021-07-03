@@ -24,12 +24,15 @@ func hashPassword(pw string) string {
 
 // Player construct
 type Player struct {
-	connection net.Conn
-	input      *bufio.Reader
-	Data       *playerData
-	interp     Interp
-	inRoom     *Room
-	textBuffer string
+	connection    net.Conn
+	input         *bufio.Reader
+	Data          *playerData
+	gameInterp    *Game
+	buildInterp   *BuildInterp
+	loginInterp   *Login
+	currentInterp Interp
+	inRoom        *Room
+	textBuffer    string
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -63,8 +66,11 @@ func (p *Player) SetConnection(c net.Conn) {
 
 // Start this player and their interp loop.
 func (p *Player) Start() {
+	p.buildInterp = NewBuildInterp(p)
+	p.gameInterp = NewGameInterp(p)
+	p.loginInterp = NewLoginInterp(p)
 	// TODO: Eventually split this line out to another function.
-	p.SetInterp(NewLogin(p))
+	p.SetInterp(p.loginInterp)
 
 	p.Write("Welcome, by what name are you known?")
 
@@ -76,7 +82,7 @@ func (p *Player) Start() {
 			break
 		}
 		str = strings.TrimSpace(str)
-		err = p.interp.Read(str)
+		err = p.currentInterp.Read(str)
 		if err != nil {
 			log.Error().Err(err).
 				Str("player", p.Data.UUID).
@@ -88,7 +94,7 @@ func (p *Player) Start() {
 
 // SetInterp for a player.
 func (p *Player) SetInterp(i Interp) {
-	p.interp = i
+	p.currentInterp = i
 }
 
 // Buffer will buffer output text until Flush() is called.
@@ -154,7 +160,7 @@ func (p *Player) ToRoom(target *Room) bool {
 
 // Command runs a command through the interp for the player.
 func (p *Player) Command(cmd string) error {
-	return p.interp.Read(cmd)
+	return p.currentInterp.Read(cmd)
 }
 
 // GetUUID of a player.

@@ -11,7 +11,7 @@ type Login struct {
 }
 
 // NewLogin interp, to handle user login and character creation.
-func NewLogin(p *Player) *Login {
+func NewLoginInterp(p *Player) *Login {
 	l := &Login{p: p}
 
 	// Create our state flow
@@ -72,7 +72,7 @@ func (l *Login) AskPassword(text string) error {
 		return nil
 	}
 	l.p.Write("Entering the world!")
-	l.p.SetInterp(NewGame(l.p))
+	l.p.SetInterp(NewGameInterp(l.p))
 	l.p.ToRoom(GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil
@@ -105,7 +105,7 @@ func (l *Login) ConfirmPassword(text string) error {
 		return l.state.SetState("NEW_PASSWORD")
 	}
 	l.p.Write("Entering the world!")
-	l.p.SetInterp(NewGame(l.p))
+	l.p.SetInterp(NewGameInterp(l.p))
 	l.p.ToRoom(GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil

@@ -6,7 +6,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Build struct {
+// BuildInterp is the builder interp, used for world crafting and modifying
+// the permanent game world.
+type BuildInterp struct {
 	p *Player
 }
 
@@ -20,14 +22,15 @@ func init() {
 	})
 }
 
-func NewBuild(p *Player) *Build {
-	b := &Build{
+// NewBuildInterp creates a new build interp.
+func NewBuildInterp(p *Player) *BuildInterp {
+	b := &BuildInterp{
 		p: p,
 	}
 	return b
 }
 
-func (b *Build) Read(text string) error {
+func (b *BuildInterp) Read(text string) error {
 	all := strings.SplitN(text, " ", 2)
 	log.
 		Debug().
