@@ -11,7 +11,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/Cidan/gomud/types"
 	"github.com/rs/zerolog/log"
 
 	uuid "github.com/satori/go.uuid"
@@ -28,8 +27,8 @@ type Player struct {
 	connection net.Conn
 	input      *bufio.Reader
 	Data       *playerData
-	interp     types.Interp
-	inRoom     types.Room
+	interp     Interp
+	inRoom     *Room
 	textBuffer string
 }
 
@@ -88,7 +87,7 @@ func (p *Player) Start() {
 }
 
 // SetInterp for a player.
-func (p *Player) SetInterp(i types.Interp) {
+func (p *Player) SetInterp(i Interp) {
 	p.interp = i
 }
 
@@ -148,7 +147,7 @@ func (p *Player) Stop() {
 
 // ToRoom moves a player to a room
 // TODO: Eventually, unwind combat, etc.
-func (p *Player) ToRoom(target types.Room) bool {
+func (p *Player) ToRoom(target *Room) bool {
 	p.inRoom = target
 	return true
 }
@@ -186,6 +185,6 @@ func (p *Player) SetPassword(password string) {
 }
 
 // GetRoom returns the room the player is currently in
-func (p *Player) GetRoom() types.Room {
+func (p *Player) GetRoom() *Room {
 	return p.inRoom
 }

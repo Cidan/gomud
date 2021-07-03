@@ -3,13 +3,12 @@ package construct
 import (
 	"strings"
 
-	"github.com/Cidan/gomud/types"
 	"github.com/rs/zerolog/log"
 )
 
 // Game interp for handling user login
 type Game struct {
-	p types.Player
+	p *Player
 }
 
 var gameCommands *commandMap
@@ -58,7 +57,7 @@ func init() {
 
 // NewGame interp for a player. This is the main game state interp
 // for which all gameplay commands are run.
-func NewGame(p types.Player) *Game {
+func NewGame(p *Player) *Game {
 	g := &Game{
 		p: p,
 	}
@@ -79,7 +78,7 @@ func (g *Game) Read(text string) error {
 // Commands go under here.
 
 // DoLook Look at the current room, an object, a player, or an NPC
-func DoLook(p types.Player, args ...string) error {
+func DoLook(p *Player, args ...string) error {
 	room := p.GetRoom()
 	p.Buffer("\n\n%s\n\n", room.GetName())
 	p.Buffer("  %s\n", room.GetDescription())
@@ -88,7 +87,7 @@ func DoLook(p types.Player, args ...string) error {
 }
 
 // DoSave will save a player to durable storage.
-func DoSave(p types.Player, args ...string) error {
+func DoSave(p *Player, args ...string) error {
 	err := p.Save()
 	if err == nil {
 		p.Write("Your player has been saved.")
@@ -97,21 +96,21 @@ func DoSave(p types.Player, args ...string) error {
 }
 
 // DoQuit will exit the player from the game world.
-func DoQuit(p types.Player, args ...string) error {
+func DoQuit(p *Player, args ...string) error {
 	p.Write("See ya!\n")
 	p.Stop()
 	return nil
 }
 
 // DoBuild enables build mode for the player.
-func DoBuild(p types.Player, args ...string) error {
+func DoBuild(p *Player, args ...string) error {
 	p.Write("Entering build mode\n")
 	p.SetInterp(NewBuild(p))
 	return nil
 }
 
 // doDir for moving a player in a direction or through a portal.
-func doDir(p types.Player, dir string) {
+func doDir(p *Player, dir string) {
 	target := p.GetRoom().LinkedRoom(dir)
 	if target != nil {
 		p.ToRoom(target)
@@ -122,31 +121,31 @@ func doDir(p types.Player, dir string) {
 	return
 }
 
-func DoNorth(p types.Player, args ...string) error {
+func DoNorth(p *Player, args ...string) error {
 	doDir(p, "north")
 	return nil
 }
 
-func DoEast(p types.Player, args ...string) error {
+func DoEast(p *Player, args ...string) error {
 	doDir(p, "east")
 	return nil
 }
 
-func DoSouth(p types.Player, args ...string) error {
+func DoSouth(p *Player, args ...string) error {
 	doDir(p, "south")
 	return nil
 }
 
-func DoWest(p types.Player, args ...string) error {
+func DoWest(p *Player, args ...string) error {
 	doDir(p, "west")
 	return nil
 }
 
-func DoUp(p types.Player, args ...string) error {
+func DoUp(p *Player, args ...string) error {
 	doDir(p, "up")
 	return nil
 }
-func DoDown(p types.Player, args ...string) error {
+func DoDown(p *Player, args ...string) error {
 	doDir(p, "down")
 	return nil
 }

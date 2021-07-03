@@ -3,12 +3,11 @@ package construct
 import (
 	"strings"
 
-	"github.com/Cidan/gomud/types"
 	"github.com/rs/zerolog/log"
 )
 
 type Build struct {
-	p types.Player
+	p *Player
 }
 
 var buildCommands *commandMap
@@ -21,7 +20,7 @@ func init() {
 	})
 }
 
-func NewBuild(p types.Player) *Build {
+func NewBuild(p *Player) *Build {
 	b := &Build{
 		p: p,
 	}
@@ -44,13 +43,13 @@ func (b *Build) Read(text string) error {
 	return gameCommands.Process(b.p, all[0], all[1:]...)
 }
 
-func doDigDir(p types.Player, dir string) error {
+func doDigDir(p *Player, dir string) error {
 	p.Write("Not yet implemented.\n")
 	return nil
 }
 
 // DoDig will create a new room in the direction the player specifies.
-func DoDig(p types.Player, args ...string) error {
+func DoDig(p *Player, args ...string) error {
 	if len(args) == 0 || args[0] == "" {
 		p.Write("Which direction do you want to dig?")
 		return nil

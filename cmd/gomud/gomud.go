@@ -1,14 +1,13 @@
 package main
 
 import (
-	"github.com/Cidan/gomud/atlas"
 	"github.com/Cidan/gomud/construct"
 	"github.com/Cidan/gomud/server"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	err := atlas.SetupWorld()
+	err := construct.SetupWorld()
 	if err != nil {
 		panic(err)
 	}
@@ -18,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	if atlas.WorldSize() == 0 {
+	if construct.WorldSize() == 0 {
 		makeDefaultRoomSet()
 	}
 
@@ -42,7 +41,7 @@ func makeDefaultRoomSet() {
 	if err != nil {
 		panic(err)
 	}
-	atlas.AddRoom(room)
+	construct.AddRoom(room)
 	room = construct.NewRoom(&construct.RoomData{
 		Name:        "The Omega",
 		Description: "It all ends here.",
@@ -54,5 +53,5 @@ func makeDefaultRoomSet() {
 	if err != nil {
 		panic(err)
 	}
-	atlas.AddRoom(room)
+	construct.AddRoom(room)
 }

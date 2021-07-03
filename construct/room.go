@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/Cidan/gomud/atlas"
-	"github.com/Cidan/gomud/types"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 )
@@ -45,7 +43,7 @@ func LoadRooms() error {
 			return err
 		}
 		log.Debug().Str("name", roomData.Name).Msg("loaded room")
-		atlas.AddRoom(NewRoom(&roomData))
+		AddRoom(NewRoom(&roomData))
 	}
 	return nil
 }
@@ -89,20 +87,20 @@ func (r *Room) Save() error {
 
 // LinkedRoom returns a room to which this room can traverse to using
 // a direction or portal, given the direction/portal name
-func (r *Room) LinkedRoom(dir string) types.Room {
+func (r *Room) LinkedRoom(dir string) *Room {
 	switch dir {
 	case "north":
-		return atlas.IsRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
+		return IsRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
 	case "east":
-		return atlas.IsRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
+		return IsRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
 	case "south":
-		return atlas.IsRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
+		return IsRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
 	case "west":
-		return atlas.IsRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
+		return IsRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
 	case "up":
-		return atlas.IsRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
+		return IsRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
 	case "down":
-		return atlas.IsRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
+		return IsRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
 	}
 	return nil
 }

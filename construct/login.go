@@ -1,19 +1,17 @@
 package construct
 
 import (
-	"github.com/Cidan/gomud/atlas"
 	"github.com/Cidan/gomud/state"
-	"github.com/Cidan/gomud/types"
 )
 
 // Login interp for handling user login
 type Login struct {
-	p     types.Player
+	p     *Player
 	state *state.State
 }
 
 // NewLogin interp, to handle user login and character creation.
-func NewLogin(p types.Player) *Login {
+func NewLogin(p *Player) *Login {
 	l := &Login{p: p}
 
 	// Create our state flow
@@ -75,7 +73,7 @@ func (l *Login) AskPassword(text string) error {
 	}
 	l.p.Write("Entering the world!")
 	l.p.SetInterp(NewGame(l.p))
-	l.p.ToRoom(atlas.GetRoom(0, 0, 0))
+	l.p.ToRoom(GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil
 }
@@ -108,7 +106,7 @@ func (l *Login) ConfirmPassword(text string) error {
 	}
 	l.p.Write("Entering the world!")
 	l.p.SetInterp(NewGame(l.p))
-	l.p.ToRoom(atlas.GetRoom(0, 0, 0))
+	l.p.ToRoom(GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil
 }
