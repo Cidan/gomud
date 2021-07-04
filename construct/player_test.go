@@ -25,6 +25,7 @@ func TestPlayer(t *testing.T) {
 	server := server.New()
 	go server.Listen(2000, func(c net.Conn) {
 		p.SetConnection(c)
+		go p.Start()
 		p.Buffer("buffer %s\n", "test")
 		p.Flush()
 		p.SetName("name")
