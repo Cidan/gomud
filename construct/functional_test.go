@@ -97,6 +97,11 @@ var testCases = []testCase{
 		[]string{"down"},
 		[]string{"You can't go that way!"},
 	},
+	{
+		"Nonsense Command",
+		[]string{"asokdjasljdk"},
+		[]string{"Huh?"},
+	},
 }
 
 func makeStartingRoom() {
