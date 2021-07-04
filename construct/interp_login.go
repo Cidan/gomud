@@ -72,8 +72,14 @@ func (l *Login) AskPassword(text string) error {
 		return nil
 	}
 	l.p.Write("Entering the world!")
+
+	if target := GetRoomByUUID(l.p.Data.Room); target != nil {
+		l.p.ToRoom(target)
+	} else {
+		l.p.ToRoom(GetRoom(0, 0, 0))
+	}
+
 	l.p.SetInterp(l.p.gameInterp)
-	l.p.ToRoom(GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil
 }

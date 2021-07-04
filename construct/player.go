@@ -149,7 +149,6 @@ func (p *Player) Load() (bool, error) {
 		return false, err
 	}
 
-	p.ToRoom(GetRoomByUUID(p.Data.Room))
 	return true, nil
 }
 
