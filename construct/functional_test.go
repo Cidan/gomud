@@ -68,42 +68,6 @@ var testCases = []testCase{
 		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
 	},
 	// Begin post game test cases -- add loaded world/player cases below this line.
-	{
-		"Go North",
-		[]string{"north"},
-		[]string{"You can't go that way!"},
-	},
-	{
-		"Go South",
-		[]string{"south"},
-		[]string{"You can't go that way!"},
-	},
-	{
-		"Go East",
-		[]string{"east"},
-		[]string{"You can't go that way!"},
-	},
-	{
-		"Go West",
-		[]string{"west"},
-		[]string{"You can't go that way!"},
-	},
-	{
-		"Go Up",
-		[]string{"up"},
-		[]string{"You can't go that way!"},
-	},
-	{
-		"Go Down",
-		[]string{"down"},
-		[]string{"You can't go that way!"},
-	},
-	{
-		"Nonsense Command",
-		[]string{"asokdjasljdk"},
-		[]string{"Huh?"},
-	},
-
 	// Build test commands
 	{
 		"Build",
@@ -160,6 +124,58 @@ var testCases = []testCase{
 		[]string{"dig sdjlkasdlj"},
 		[]string{"That's not a valid direction to dig in."},
 	},
+	{
+		"Build Off",
+		[]string{"build"},
+		[]string{"Build mode deactivated."},
+	},
+	// Build tests done.
+	{
+		"Go North",
+		[]string{"north"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go South",
+		[]string{"south"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go East",
+		[]string{"east"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go West",
+		[]string{"west"},
+		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
+	},
+	{
+		"Go Up",
+		[]string{"up"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Go Down",
+		[]string{"down"},
+		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
+	},
+	{
+		"Nonsense Command",
+		[]string{"asokdjasljdk"},
+		[]string{"Huh?"},
+	},
+	{
+		"Save",
+		[]string{"save"},
+		[]string{"Your player has been saved."},
+	},
+	// This should always be the last test. Do not change this case.
+	{
+		"Quit",
+		[]string{"quit"},
+		[]string{"See ya!\n"},
+	},
 }
 
 func makeStartingRoom() {
@@ -182,7 +198,7 @@ func TestEndToEnd(t *testing.T) {
 	go server.Listen(2000, func(c net.Conn) {
 		// Simulated player connection loop
 		p.SetConnection(c)
-		p.Start()
+		go p.Start()
 	})
 
 	conn, err := net.Dial("tcp", "localhost:2000")
