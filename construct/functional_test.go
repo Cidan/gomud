@@ -8,6 +8,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/Cidan/gomud/config"
 	"github.com/Cidan/gomud/mocks/server"
 	"github.com/stretchr/testify/assert"
 )
@@ -115,7 +116,8 @@ func makeStartingRoom() {
 	AddRoom(room)
 }
 
-func TestPlayer(t *testing.T) {
+func TestEndToEnd(t *testing.T) {
+	config.Set("save_path", t.TempDir())
 	makeStartingRoom()
 	p := NewPlayer()
 	assert.NotNil(t, p)

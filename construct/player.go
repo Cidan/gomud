@@ -11,6 +11,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
 
 	uuid "github.com/satori/go.uuid"
@@ -121,7 +122,7 @@ func (p *Player) Save() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile("/tmp/"+p.Data.Name, data, 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("%s%s", config.GetString("save_path"), p.Data.Name), data, 0644)
 	if err != nil {
 		return err
 	}
@@ -131,7 +132,7 @@ func (p *Player) Save() error {
 // Load a player from source. Returns true if player was loaded.
 func (p *Player) Load() (bool, error) {
 	// TODO: This is absurdly unsafe. Fix this.
-	data, err := ioutil.ReadFile("/tmp/" + p.Data.Name)
+	data, err := ioutil.ReadFile(fmt.Sprintf("%s%s", config.GetString("save_path"), p.Data.Name))
 	// TODO: Make this more robust, need to know if error is because of file
 	// not found, or error reading.
 	if err != nil {
