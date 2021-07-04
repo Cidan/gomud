@@ -4,7 +4,7 @@ import "github.com/spf13/viper"
 
 func init() {
 	viper.AddConfigPath(".")
-	viper.SetDefault("save_path", "/tmp/")
+	viper.SetDefault("save_path", "/tmp")
 }
 
 // Set will set a config value for the given key.

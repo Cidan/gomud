@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
@@ -29,12 +30,13 @@ type Room struct {
 
 // LoadRooms loads all the rooms in the world.
 func LoadRooms() error {
-	files, err := ioutil.ReadDir(fmt.Sprintf("%srooms/", config.GetString("save_path")))
+	os.Mkdir(fmt.Sprintf("%s/rooms", config.GetString("save_path")), 0755)
+	files, err := ioutil.ReadDir(fmt.Sprintf("%s/rooms/", config.GetString("save_path")))
 	if err != nil {
 		return err
 	}
 	for _, file := range files {
-		data, err := ioutil.ReadFile(fmt.Sprintf("%srooms/%s", config.GetString("save_path"), file.Name()))
+		data, err := ioutil.ReadFile(fmt.Sprintf("%s/rooms/%s", config.GetString("save_path"), file.Name()))
 		if err != nil {
 			return err
 		}
@@ -79,7 +81,8 @@ func (r *Room) Save() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("%srooms/%s", config.GetString("save_path"), r.Data.UUID), data, 0644)
+	os.Mkdir(fmt.Sprintf("%s/rooms", config.GetString("save_path")), 0755)
+	err = ioutil.WriteFile(fmt.Sprintf("%s/rooms/%s", config.GetString("save_path"), r.Data.UUID), data, 0644)
 	if err != nil {
 		return err
 	}

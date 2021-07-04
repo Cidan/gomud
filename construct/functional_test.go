@@ -103,6 +103,63 @@ var testCases = []testCase{
 		[]string{"asokdjasljdk"},
 		[]string{"Huh?"},
 	},
+
+	// Build test commands
+	{
+		"Build",
+		[]string{"build"},
+		[]string{"Entering build mode\n"},
+	},
+	{
+		"Dig",
+		[]string{"dig"},
+		[]string{"Which direction do you want to dig?"},
+	},
+	{
+		"Dig North",
+		[]string{"dig north"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig South Already Exists",
+		[]string{"dig south"},
+		[]string{"There's already a room 'south'.\n"},
+	},
+	{
+		"Dig West",
+		[]string{"dig west"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig South",
+		[]string{"dig south"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig Up",
+		[]string{"dig up"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig East",
+		[]string{"dig east"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig East Again",
+		[]string{"dig east"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig Down",
+		[]string{"dig down"},
+		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+	},
+	{
+		"Dig Nonsense",
+		[]string{"dig sdjlkasdlj"},
+		[]string{"That's not a valid direction to dig in."},
+	},
 }
 
 func makeStartingRoom() {
