@@ -26,6 +26,9 @@ func NewBuildInterp(p *Player) *BuildInterp {
 	}).Add(&command{
 		name: "build",
 		Fn:   b.DoBuild,
+	}).Add(&command{
+		name: "autobuild",
+		Fn:   b.Autobuild,
 	})
 	b.commands = commands
 	return b
@@ -118,5 +121,17 @@ func (b *BuildInterp) DoDig(args ...string) error {
 func (b *BuildInterp) DoBuild(args ...string) error {
 	b.p.Game()
 	b.p.Write("Build mode deactivated.")
+	return nil
+}
+
+// Autobuild enables autobuild, which will automatically cause the player
+// to dig in the direction of their movement.
+func (b *BuildInterp) Autobuild(args ...string) error {
+	v := b.p.ToggleFlag("autobuild")
+	if v {
+		b.p.Write("Autobuild has been enabled.")
+	} else {
+		b.p.Write("Autobuild has been disabled.")
+	}
 	return nil
 }

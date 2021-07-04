@@ -125,6 +125,16 @@ var testCases = []testCase{
 		[]string{"That's not a valid direction to dig in."},
 	},
 	{
+		"Autobuild On",
+		[]string{"autobuild"},
+		[]string{"Autobuild has been enabled."},
+	},
+	{
+		"Autobuild Off",
+		[]string{"autobuild"},
+		[]string{"Autobuild has been disabled."},
+	},
+	{
 		"Build Off",
 		[]string{"build"},
 		[]string{"Build mode deactivated."},

@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"strings"
+	"sync"
 
 	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
@@ -34,6 +35,7 @@ type Player struct {
 	currentInterp Interp
 	inRoom        *Room
 	textBuffer    string
+	flagMutex     *sync.RWMutex
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -46,6 +48,7 @@ type playerData struct {
 	Name     string
 	Password string
 	Room     string
+	Flags    map[string]bool
 }
 
 // NewPlayer constructs a new player
@@ -53,8 +56,10 @@ func NewPlayer() *Player {
 
 	p := &Player{
 		Data: &playerData{
-			UUID: uuid.NewV4().String(),
+			UUID:  uuid.NewV4().String(),
+			Flags: make(map[string]bool),
 		},
+		flagMutex: new(sync.RWMutex),
 	}
 
 	return p
@@ -216,4 +221,44 @@ func (p *Player) Game() {
 // Login switches a player to the Login interp.
 func (p *Player) Login() {
 	p.setInterp(p.loginInterp)
+}
+
+// EnableFlag enables a given flag for a player.
+func (p *Player) EnableFlag(key string) {
+	p.flagMutex.Lock()
+	defer p.flagMutex.Unlock()
+	p.Data.Flags[key] = true
+}
+
+// DisableFlag disables a flag for a player.
+func (p *Player) DisableFlag(key string) {
+	p.flagMutex.Lock()
+	defer p.flagMutex.Unlock()
+	p.Data.Flags[key] = false
+}
+
+// ToggleFlag will toggle the flag from it's current state, and return the new state.
+func (p *Player) ToggleFlag(key string) bool {
+	p.flagMutex.Lock()
+	defer p.flagMutex.Unlock()
+	v, ok := p.Data.Flags[key]
+
+	if !ok || !v {
+		p.Data.Flags[key] = true
+		return true
+	}
+
+	p.Data.Flags[key] = false
+	return false
+}
+
+// Flag returns the state of a flag for a player.
+func (p *Player) Flag(key string) bool {
+	p.flagMutex.RLock()
+	defer p.flagMutex.RUnlock()
+	v, ok := p.Data.Flags[key]
+	if !ok {
+		return false
+	}
+	return v
 }
