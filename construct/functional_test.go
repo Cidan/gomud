@@ -1,5 +1,8 @@
 package construct
 
+// This test file contains functional tests for the game world.
+// TODO(lobato): Move this out of construct and into the execution endpoint
+// to simulate true functional tests.
 import (
 	"bufio"
 	"net"
@@ -24,6 +27,16 @@ var testCases = []testCase{
 		[]string{"Are you sure you want to be known as name?"},
 	},
 	{
+		"Back Out Login Name",
+		[]string{"no"},
+		[]string{"Okay, so what's your name?"},
+	},
+	{
+		"Actual Login Name",
+		[]string{"name"},
+		[]string{"Are you sure you want to be known as name?"},
+	},
+	{
 		"Confirm Name",
 		[]string{"yes"},
 		[]string{"Welcome name, please give me a password: "},
@@ -43,18 +56,62 @@ var testCases = []testCase{
 		[]string{"pass123"},
 		[]string{"Confirm your password and type it again: "},
 	},
-	// TODO(lobato): This crashes tests right now -- no game world loaded.
-	/*
-		{
-			"Confirm Password",
-			[]string{"pass123"},
-			[]string{"Entering the world!"},
-		},
-	*/
+	{
+		"Confirm Password",
+		[]string{"pass123"},
+		[]string{"Entering the world!"},
+	},
+	{
+		"First Look",
+		[]string{},
+		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
+	},
+	// Begin post game test cases -- add loaded world/player cases below this line.
+	{
+		"Go North",
+		[]string{"north"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go South",
+		[]string{"south"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go East",
+		[]string{"east"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go West",
+		[]string{"west"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go Up",
+		[]string{"up"},
+		[]string{"You can't go that way!"},
+	},
+	{
+		"Go Down",
+		[]string{"down"},
+		[]string{"You can't go that way!"},
+	},
+}
+
+func makeStartingRoom() {
+	room := NewRoom(&RoomData{
+		Name:        "The Alpha",
+		Description: "It all starts here.",
+		X:           0,
+		Y:           0,
+		Z:           0,
+	})
+	AddRoom(room)
 }
 
 func TestPlayer(t *testing.T) {
-
+	makeStartingRoom()
 	p := NewPlayer()
 	assert.NotNil(t, p)
 	server := server.New()

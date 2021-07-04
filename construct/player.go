@@ -105,7 +105,7 @@ func (p *Player) Buffer(text string, args ...interface{}) {
 
 // Flush will write the player buffer to the player and clear the buffer.
 func (p *Player) Flush() {
-	fmt.Fprint(p.connection, p.textBuffer)
+	fmt.Fprint(p.connection, p.textBuffer+"\r")
 	p.textBuffer = ""
 }
 
