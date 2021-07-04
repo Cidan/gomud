@@ -1,6 +1,8 @@
 package construct
 
-type commandCallback func(*Player, ...string) error
+import "fmt"
+
+type commandCallback func(...string) error
 
 // Interp type for interpreting player commands.
 type Interp interface {
@@ -18,6 +20,10 @@ type command struct {
 type commandMap struct {
 	commands map[string]*command
 }
+
+var (
+	ErrCommandNotFound = fmt.Errorf("command does not exist")
+)
 
 func newCommands() *commandMap {
 	return &commandMap{
@@ -37,13 +43,12 @@ func (c *commandMap) Add(nc *command) *commandMap {
 	return c
 }
 
-func (c *commandMap) Process(p *Player, command string, input ...string) error {
+func (c *commandMap) Process(command string, input ...string) error {
 	if c.commands[command] != nil {
-		return c.commands[command].Fn(p, input...)
+		return c.commands[command].Fn(input...)
 	}
 
-	p.Write("Huh?")
-	return nil
+	return ErrCommandNotFound
 }
 
 func (c *commandMap) Has(command string) bool {

@@ -9,17 +9,8 @@ import (
 // BuildInterp is the builder interp, used for world crafting and modifying
 // the permanent game world.
 type BuildInterp struct {
-	p *Player
-}
-
-var buildCommands *commandMap
-
-func init() {
-	buildCommands = newCommands()
-	buildCommands.Add(&command{
-		name: "dig",
-		Fn:   DoDig,
-	})
+	p        *Player
+	commands *commandMap
 }
 
 // NewBuildInterp creates a new build interp.
@@ -27,6 +18,13 @@ func NewBuildInterp(p *Player) *BuildInterp {
 	b := &BuildInterp{
 		p: p,
 	}
+
+	commands := newCommands()
+	commands.Add(&command{
+		name: "dig",
+		Fn:   b.DoDig,
+	})
+	b.commands = commands
 	return b
 }
 
@@ -39,38 +37,38 @@ func (b *BuildInterp) Read(text string) error {
 		Str("player.name", b.p.GetName()).
 		Msg("Command")
 
-	if buildCommands.Has(all[0]) {
-		return buildCommands.Process(b.p, all[0], all[1:]...)
+	if b.commands.Has(all[0]) {
+		return b.commands.Process(all[0], all[1:]...)
 	}
-	return b.p.gameInterp.commands.Process(b.p, all[0], all[1:]...)
+	return b.p.gameInterp.commands.Process(all[0], all[1:]...)
 }
 
-func doDigDir(p *Player, dir string) error {
-	p.Write("Not yet implemented.\n")
+func (b *BuildInterp) doDigDir(dir string) error {
+	b.p.Write("Not yet implemented.\n")
 	return nil
 }
 
 // DoDig will create a new room in the direction the player specifies.
-func DoDig(p *Player, args ...string) error {
+func (b *BuildInterp) DoDig(args ...string) error {
 	if len(args) == 0 || args[0] == "" {
-		p.Write("Which direction do you want to dig?")
+		b.p.Write("Which direction do you want to dig?")
 		return nil
 	}
 	switch args[0] {
 	case "north", "n":
-		return doDigDir(p, "north")
+		return b.doDigDir("north")
 	case "east", "e":
-		return doDigDir(p, "east")
+		return b.doDigDir("east")
 	case "south", "s":
-		return doDigDir(p, "south")
+		return b.doDigDir("south")
 	case "west", "w":
-		return doDigDir(p, "west")
+		return b.doDigDir("west")
 	case "up", "u":
-		return doDigDir(p, "up")
+		return b.doDigDir("up")
 	case "down", "d":
-		return doDigDir(p, "down")
+		return b.doDigDir("down")
 	default:
-		p.Write("That's not a valid direction to dig in.")
+		b.p.Write("That's not a valid direction to dig in.")
 		return nil
 	}
 }

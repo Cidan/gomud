@@ -15,49 +15,51 @@ type Game struct {
 // NewGameInterp interp for a player. This is the main game state interp
 // for which all gameplay commands are run.
 func NewGameInterp(p *Player) *Game {
+	g := &Game{
+		p: p,
+	}
+
 	commands := newCommands()
 	commands.Add(&command{
 		name:  "look",
 		alias: []string{"l"},
-		Fn:    DoLook,
+		Fn:    g.DoLook,
 	}).Add(&command{
 		name: "save",
-		Fn:   DoSave,
+		Fn:   g.DoSave,
 	}).Add(&command{
 		name: "quit",
-		Fn:   DoQuit,
+		Fn:   g.DoQuit,
 	}).Add(&command{
 		name: "build",
-		Fn:   DoBuild,
+		Fn:   g.DoBuild,
 	}).Add(&command{
 		name:  "north",
 		alias: []string{"n"},
-		Fn:    DoNorth,
+		Fn:    g.DoNorth,
 	}).Add(&command{
 		name:  "east",
 		alias: []string{"e"},
-		Fn:    DoEast,
+		Fn:    g.DoEast,
 	}).Add(&command{
 		name:  "south",
 		alias: []string{"s"},
-		Fn:    DoSouth,
+		Fn:    g.DoSouth,
 	}).Add(&command{
 		name:  "west",
 		alias: []string{"w"},
-		Fn:    DoWest,
+		Fn:    g.DoWest,
 	}).Add(&command{
 		name:  "up",
 		alias: []string{"u"},
-		Fn:    DoUp,
+		Fn:    g.DoUp,
 	}).Add(&command{
 		name:  "down",
 		alias: []string{"d"},
-		Fn:    DoDown,
+		Fn:    g.DoDown,
 	})
-	g := &Game{
-		p:        p,
-		commands: commands,
-	}
+
+	g.commands = commands
 	return g
 }
 
@@ -69,80 +71,80 @@ func (g *Game) Read(text string) error {
 		Str("player.uuid", g.p.GetUUID()).
 		Str("player.name", g.p.GetName()).
 		Msg("Command")
-	return g.commands.Process(g.p, all[0], all[1:]...)
+	return g.commands.Process(all[0], all[1:]...)
 }
 
 // Commands go under here.
 
 // DoLook Look at the current room, an object, a player, or an NPC
-func DoLook(p *Player, args ...string) error {
-	room := p.GetRoom()
-	p.Buffer("\n\n%s\n\n", room.GetName())
-	p.Buffer("  %s\n", room.GetDescription())
-	p.Flush()
+func (g *Game) DoLook(args ...string) error {
+	room := g.p.GetRoom()
+	g.p.Buffer("\n\n%s\n\n", room.GetName())
+	g.p.Buffer("  %s\n", room.GetDescription())
+	g.p.Flush()
 	return nil
 }
 
 // DoSave will save a player to durable storage.
-func DoSave(p *Player, args ...string) error {
-	err := p.Save()
+func (g *Game) DoSave(args ...string) error {
+	err := g.p.Save()
 	if err == nil {
-		p.Write("Your player has been saved.")
+		g.p.Write("Your player has been saved.")
 	}
 	return err
 }
 
 // DoQuit will exit the player from the game world.
-func DoQuit(p *Player, args ...string) error {
-	p.Write("See ya!\n")
-	p.Stop()
+func (g *Game) DoQuit(args ...string) error {
+	g.p.Write("See ya!\n")
+	g.p.Stop()
 	return nil
 }
 
 // DoBuild enables build mode for the player.
-func DoBuild(p *Player, args ...string) error {
-	p.Write("Entering build mode\n")
-	p.SetInterp(NewBuildInterp(p))
+func (g *Game) DoBuild(args ...string) error {
+	g.p.Write("Entering build mode\n")
+	g.p.SetInterp(g.p.buildInterp)
 	return nil
 }
 
 // doDir for moving a player in a direction or through a portal.
-func doDir(p *Player, dir string) {
-	target := p.GetRoom().LinkedRoom(dir)
+func (g *Game) doDir(dir string) {
+	target := g.p.GetRoom().LinkedRoom(dir)
 	if target != nil {
-		p.ToRoom(target)
-		p.Command("look")
+		g.p.ToRoom(target)
+		g.p.Command("look")
 		return
 	}
-	p.Write("You can't go that way!")
+	g.p.Write("You can't go that way!")
 	return
 }
 
-func DoNorth(p *Player, args ...string) error {
-	doDir(p, "north")
+func (g *Game) DoNorth(args ...string) error {
+	g.doDir("north")
 	return nil
 }
 
-func DoEast(p *Player, args ...string) error {
-	doDir(p, "east")
+func (g *Game) DoEast(args ...string) error {
+	g.doDir("east")
 	return nil
 }
 
-func DoSouth(p *Player, args ...string) error {
-	doDir(p, "south")
+func (g *Game) DoSouth(args ...string) error {
+	g.doDir("south")
 	return nil
 }
 
-func DoWest(p *Player, args ...string) error {
-	doDir(p, "west")
+func (g *Game) DoWest(args ...string) error {
+	g.doDir("west")
 	return nil
 }
 
-func DoUp(p *Player, args ...string) error {
-	doDir(p, "up")
+func (g *Game) DoUp(args ...string) error {
+	g.doDir("up")
 	return nil
 }
-func DoDown(p *Player, args ...string) error {
-	doDir(p, "down")
+func (g *Game) DoDown(args ...string) error {
+	g.doDir("down")
 	return nil
 }

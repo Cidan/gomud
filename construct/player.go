@@ -83,12 +83,17 @@ func (p *Player) Start() {
 		}
 		str = strings.TrimSpace(str)
 		err = p.currentInterp.Read(str)
-		if err != nil {
+		switch err {
+		case ErrCommandNotFound:
+			p.Write("Huh?")
+		case nil:
+			break
+		default:
 			log.Error().Err(err).
 				Str("player", p.Data.UUID).
 				Msg("Error reading input from player.")
+			log.Debug().Msg(str)
 		}
-		log.Debug().Msg(str)
 	}
 }
 
