@@ -44,8 +44,46 @@ func (b *BuildInterp) Read(text string) error {
 }
 
 func (b *BuildInterp) doDigDir(dir string) error {
-	b.p.Write("Not yet implemented.\n")
+	currentRoom := b.p.GetRoom()
+	if currentRoom.LinkedRoom(dir) != nil {
+		b.p.Write("There's already a room '%s'.\n", dir)
+		return nil
+	}
+	rX, rY, rZ := b.getRelativeDir(dir)
+	room := NewRoom(&RoomData{
+		Name:        "New Room",
+		Description: "This is a new room, with a new description.",
+		X:           currentRoom.Data.X + rX,
+		Y:           currentRoom.Data.Y + rY,
+		Z:           currentRoom.Data.Z + rZ,
+	})
+
+	if err := room.Save(); err != nil {
+		return err
+	}
+	AddRoom(room)
+
+	b.p.ToRoom(room)
+	b.p.Command("look")
 	return nil
+}
+
+func (b *BuildInterp) getRelativeDir(dir string) (x, y, z int64) {
+	switch dir {
+	case "north":
+		return 0, 1, 0
+	case "south":
+		return 0, -1, 0
+	case "east":
+		return 1, 0, 0
+	case "west":
+		return -1, 0, 0
+	case "up":
+		return 0, 0, 1
+	case "down":
+		return 0, 0, -1
+	}
+	return 0, 0, 0
 }
 
 // DoDig will create a new room in the direction the player specifies.
