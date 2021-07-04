@@ -8,14 +8,15 @@ import (
 
 // Game interp for handling user login
 type Game struct {
-	p *Player
+	p        *Player
+	commands *commandMap
 }
 
-var gameCommands *commandMap
-
-func init() {
-	gameCommands = newCommands()
-	gameCommands.Add(&command{
+// NewGameInterp interp for a player. This is the main game state interp
+// for which all gameplay commands are run.
+func NewGameInterp(p *Player) *Game {
+	commands := newCommands()
+	commands.Add(&command{
 		name:  "look",
 		alias: []string{"l"},
 		Fn:    DoLook,
@@ -53,13 +54,9 @@ func init() {
 		alias: []string{"d"},
 		Fn:    DoDown,
 	})
-}
-
-// NewGameInterp interp for a player. This is the main game state interp
-// for which all gameplay commands are run.
-func NewGameInterp(p *Player) *Game {
 	g := &Game{
-		p: p,
+		p:        p,
+		commands: commands,
 	}
 	return g
 }
@@ -72,7 +69,7 @@ func (g *Game) Read(text string) error {
 		Str("player.uuid", g.p.GetUUID()).
 		Str("player.name", g.p.GetName()).
 		Msg("Command")
-	return gameCommands.Process(g.p, all[0], all[1:]...)
+	return g.commands.Process(g.p, all[0], all[1:]...)
 }
 
 // Commands go under here.

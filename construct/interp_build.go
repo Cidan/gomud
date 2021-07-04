@@ -42,8 +42,7 @@ func (b *BuildInterp) Read(text string) error {
 	if buildCommands.Has(all[0]) {
 		return buildCommands.Process(b.p, all[0], all[1:]...)
 	}
-
-	return gameCommands.Process(b.p, all[0], all[1:]...)
+	return b.p.gameInterp.commands.Process(b.p, all[0], all[1:]...)
 }
 
 func doDigDir(p *Player, dir string) error {
