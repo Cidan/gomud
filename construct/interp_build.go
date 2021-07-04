@@ -114,6 +114,7 @@ func (b *BuildInterp) DoDig(args ...string) error {
 	}
 }
 
+// DoBuild deactivates build mode.
 func (b *BuildInterp) DoBuild(args ...string) error {
 	b.p.Game()
 	b.p.Write("Build mode deactivated.")

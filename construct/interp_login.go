@@ -10,7 +10,7 @@ type Login struct {
 	state *state.State
 }
 
-// NewLogin interp, to handle user login and character creation.
+// NewLoginInterp creates a new login interp to handle user login and character creation.
 func NewLoginInterp(p *Player) *Login {
 	l := &Login{p: p}
 

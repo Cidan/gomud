@@ -120,30 +120,37 @@ func (g *Game) doDir(dir string) {
 	return
 }
 
+// DoNorth moves the player north.
 func (g *Game) DoNorth(args ...string) error {
 	g.doDir("north")
 	return nil
 }
 
+// DoEast moves the player east.
 func (g *Game) DoEast(args ...string) error {
 	g.doDir("east")
 	return nil
 }
 
+// DoSouth moves the player south.
 func (g *Game) DoSouth(args ...string) error {
 	g.doDir("south")
 	return nil
 }
 
+// DoWest moves the player west.
 func (g *Game) DoWest(args ...string) error {
 	g.doDir("west")
 	return nil
 }
 
+// DoUp moves the player up.
 func (g *Game) DoUp(args ...string) error {
 	g.doDir("up")
 	return nil
 }
+
+// DoDown moves the player down.
 func (g *Game) DoDown(args ...string) error {
 	g.doDir("down")
 	return nil

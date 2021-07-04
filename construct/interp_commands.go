@@ -22,6 +22,7 @@ type commandMap struct {
 }
 
 var (
+	//ErrCommandNotFound denotes when a command does not exist for an interp.
 	ErrCommandNotFound = fmt.Errorf("command does not exist")
 )
 

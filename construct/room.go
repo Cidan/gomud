@@ -90,21 +90,22 @@ func (r *Room) Save() error {
 func (r *Room) LinkedRoom(dir string) *Room {
 	switch dir {
 	case "north":
-		return IsRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
+		return GetRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
 	case "east":
-		return IsRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
+		return GetRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
 	case "south":
-		return IsRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
+		return GetRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
 	case "west":
-		return IsRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
+		return GetRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
 	case "up":
-		return IsRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
+		return GetRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
 	case "down":
-		return IsRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
+		return GetRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
 	}
 	return nil
 }
 
+// AddPlayer adds a player to a room.
 func (r *Room) AddPlayer(player *Player) {
 
 }
