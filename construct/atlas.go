@@ -5,13 +5,12 @@ import (
 )
 
 var worldMap map[string]*Room
+var worldRoomUUID map[string]*Room
 var worldSize int64
 
-func SetupWorld() error {
-	if worldMap == nil {
-		worldMap = make(map[string]*Room)
-	}
-	return nil
+func init() {
+	worldMap = make(map[string]*Room)
+	worldRoomUUID = make(map[string]*Room)
 }
 
 func genRoomIndex(X, Y, Z int64) string {
@@ -25,8 +24,16 @@ func GetRoom(X, Y, Z int64) *Room {
 	return nil
 }
 
+func GetRoomByUUID(uuid string) *Room {
+	if room, ok := worldRoomUUID[uuid]; ok {
+		return room
+	}
+	return nil
+}
+
 func AddRoom(r *Room) {
 	worldMap[r.GetIndex()] = r
+	worldRoomUUID[r.Data.UUID] = r
 	worldSize++
 }
 

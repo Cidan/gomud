@@ -7,12 +7,8 @@ import (
 )
 
 func main() {
-	err := construct.SetupWorld()
-	if err != nil {
-		panic(err)
-	}
 
-	err = construct.LoadRooms()
+	err := construct.LoadRooms()
 	if err != nil {
 		panic(err)
 	}

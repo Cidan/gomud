@@ -44,6 +44,7 @@ type playerData struct {
 	UUID     string
 	Name     string
 	Password string
+	Room     string
 }
 
 // NewPlayer constructs a new player
@@ -148,6 +149,7 @@ func (p *Player) Load() (bool, error) {
 		return false, err
 	}
 
+	p.ToRoom(GetRoomByUUID(p.Data.Room))
 	return true, nil
 }
 
@@ -160,6 +162,7 @@ func (p *Player) Stop() {
 // TODO: Eventually, unwind combat, etc.
 func (p *Player) ToRoom(target *Room) bool {
 	p.inRoom = target
+	p.Data.Room = target.Data.UUID
 	return true
 }
 

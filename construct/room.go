@@ -15,7 +15,6 @@ type RoomData struct {
 	UUID        string
 	Name        string
 	Description string
-	Players     []*Player
 	X           int64
 	Y           int64
 	Z           int64
@@ -23,7 +22,8 @@ type RoomData struct {
 
 // Room is the top level struct for a room.
 type Room struct {
-	Data *RoomData
+	Data    *RoomData
+	Players []*Player
 }
 
 // LoadRooms loads all the rooms in the world.
