@@ -71,7 +71,7 @@ func (p *Player) Start() {
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
 	// TODO: Eventually split this line out to another function.
-	p.SetInterp(p.loginInterp)
+	p.Login()
 
 	p.Write("Welcome, by what name are you known?")
 
@@ -98,11 +98,6 @@ func (p *Player) Start() {
 	}
 }
 
-// SetInterp for a player.
-func (p *Player) SetInterp(i Interp) {
-	p.currentInterp = i
-}
-
 // Buffer will buffer output text until Flush() is called.
 func (p *Player) Buffer(text string, args ...interface{}) {
 	p.textBuffer += fmt.Sprintf(text, args...)
@@ -116,7 +111,7 @@ func (p *Player) Flush() {
 
 // Write output to a player.
 func (p *Player) Write(text string, args ...interface{}) {
-	fmt.Fprintf(p.connection, text, args...)
+	fmt.Fprintf(p.connection, text+"\r", args...)
 }
 
 // Save a player to disk
@@ -200,4 +195,24 @@ func (p *Player) SetPassword(password string) {
 // GetRoom returns the room the player is currently in
 func (p *Player) GetRoom() *Room {
 	return p.inRoom
+}
+
+// SetInterp for a player.
+func (p *Player) setInterp(i Interp) {
+	p.currentInterp = i
+}
+
+// Build switches a player to the Build interp.
+func (p *Player) Build() {
+	p.setInterp(p.buildInterp)
+}
+
+// Game switches a player to the Game interp.
+func (p *Player) Game() {
+	p.setInterp(p.gameInterp)
+}
+
+// Login switches a player to the Login interp.
+func (p *Player) Login() {
+	p.setInterp(p.loginInterp)
 }

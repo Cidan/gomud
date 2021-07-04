@@ -23,6 +23,9 @@ func NewBuildInterp(p *Player) *BuildInterp {
 	commands.Add(&command{
 		name: "dig",
 		Fn:   b.DoDig,
+	}).Add(&command{
+		name: "build",
+		Fn:   b.DoBuild,
 	})
 	b.commands = commands
 	return b
@@ -109,4 +112,10 @@ func (b *BuildInterp) DoDig(args ...string) error {
 		b.p.Write("That's not a valid direction to dig in.")
 		return nil
 	}
+}
+
+func (b *BuildInterp) DoBuild(args ...string) error {
+	b.p.Game()
+	b.p.Write("Build mode deactivated.")
+	return nil
 }
