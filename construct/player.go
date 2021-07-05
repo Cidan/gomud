@@ -2,6 +2,7 @@ package construct
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
@@ -37,6 +39,8 @@ type Player struct {
 	inRoom        *Room
 	textBuffer    string
 	flagMutex     *sync.RWMutex
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -65,7 +69,7 @@ type playerStats struct {
 
 // NewPlayer constructs a new player
 func NewPlayer() *Player {
-
+	ctx, cancel := context.WithCancel(context.Background())
 	p := &Player{
 		Data: &playerData{
 			UUID:  uuid.NewV4().String(),
@@ -73,6 +77,8 @@ func NewPlayer() *Player {
 			Stats: &playerStats{},
 		},
 		flagMutex: new(sync.RWMutex),
+		ctx:       ctx,
+		cancel:    cancel,
 	}
 	p.setDefaults()
 	return p
@@ -92,6 +98,21 @@ func (p *Player) setDefaults() {
 	p.ModifyStat("max_move", 100, false)
 }
 
+// playerTick is this specific player's tick timer. This is where you add
+// effects such as combat actions, damage dealt, status effects, and other
+// things the player should do/have happen to them over time.
+func (p *Player) playerTick() {
+	ticker := time.NewTicker(time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			break
+		case <-p.ctx.Done():
+			return
+		}
+	}
+}
+
 // SetConnection sets the player connection object
 func (p *Player) SetConnection(c net.Conn) {
 	p.connection = c
@@ -108,24 +129,31 @@ func (p *Player) Start() {
 	p.Write("Welcome, by what name are you known?")
 
 	for {
-		str, err := p.input.ReadString('\n')
-		if err != nil {
-			log.Error().Err(err).Msg("Error reading player input.")
-			p.Stop()
-			break
-		}
-		str = strings.TrimSpace(str)
-		err = p.currentInterp.Read(str)
-		switch err {
-		case ErrCommandNotFound:
-			p.Write("Huh?")
-		case nil:
-			break
+		select {
+		case <-p.ctx.Done():
+			log.Info().Str("player", p.Data.UUID).Msg("Player context canceled, closing connection.")
+			p.connection.Close()
+			return
 		default:
-			log.Error().Err(err).
-				Str("player", p.Data.UUID).
-				Msg("Error reading input from player.")
-			log.Debug().Msg(str)
+			str, err := p.input.ReadString('\n')
+			if err != nil {
+				log.Error().Err(err).Msg("Error reading player input.")
+				p.Stop()
+				return
+			}
+			str = strings.TrimSpace(str)
+			err = p.currentInterp.Read(str)
+			switch err {
+			case ErrCommandNotFound:
+				p.Write("Huh?")
+			case nil:
+				break
+			default:
+				log.Error().Err(err).
+					Str("player", p.Data.UUID).
+					Msg("Error interpreting input from player.")
+				log.Debug().Msg(str)
+			}
 		}
 	}
 }
@@ -213,7 +241,8 @@ func (p *Player) Stop() {
 	p.Save()
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.connection.Write([]byte("\n"))
-	p.connection.Close()
+	p.cancel()
+
 }
 
 // ToRoom moves a player to a room
