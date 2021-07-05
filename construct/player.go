@@ -406,6 +406,11 @@ func (p *Player) ModifyStat(key string, value int64, relative bool) {
 	}
 }
 
+// PlayerDescription returns a short description of the player's state, used in `look`, etc.
+func (p *Player) PlayerDescription() string {
+	return fmt.Sprintf("%s is here.", p.GetName())
+}
+
 func setOrModify(base int64, value int64, relative bool) int64 {
 	if relative {
 		return base + value
