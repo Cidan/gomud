@@ -120,13 +120,11 @@ func (p *Player) SetConnection(c net.Conn) {
 	r := bufio.NewReader(c)
 	// Wrap our reader in a channel so that we can select it
 	// in the interp loop. When the connection is closed by p.Stop(),
-	// this loop will break. We call p.Stop() here in case the error
-	// is remote -- this will initiate a cleanup.
+	// this loop will break.
 	go func(r *bufio.Reader) {
 		for {
 			str, err := r.ReadString('\n')
 			if err != nil {
-				p.Stop()
 				break
 			}
 			p.input <- str
@@ -248,10 +246,10 @@ func (p *Player) Load() (bool, error) {
 func (p *Player) Stop() {
 	// TODO(lobato): Handle error
 	p.Save()
+	p.FromRoom()
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.connection.Write([]byte("\n"))
 	p.cancel()
-
 }
 
 // ToRoom moves a player to a room
@@ -268,6 +266,16 @@ func (p *Player) ToRoom(target *Room) bool {
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
 	target.AddPlayer(p)
+	return true
+}
+
+// FromRoom removes the player from their current room.
+func (p *Player) FromRoom() bool {
+	if p.inRoom == nil {
+		return true
+	}
+	p.inRoom.RemovePlayer(p)
+	p.inRoom = nil
 	return true
 }
 
