@@ -219,8 +219,17 @@ func (p *Player) Stop() {
 // ToRoom moves a player to a room
 // TODO: Eventually, unwind combat, etc.
 func (p *Player) ToRoom(target *Room) bool {
+	// Player is already in the room, don't do anything.
+	if p.inRoom == target {
+		return true
+	}
+	// Remove the player from the current room.
+	if p.inRoom != nil {
+		p.inRoom.RemovePlayer(p)
+	}
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
+	target.AddPlayer(p)
 	return true
 }
 

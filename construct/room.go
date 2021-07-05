@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
@@ -24,8 +25,9 @@ type RoomData struct {
 
 // Room is the top level struct for a room.
 type Room struct {
-	Data    *RoomData
-	Players []*Player
+	Data        *RoomData
+	Players     map[string]*Player
+	playerMutex *sync.RWMutex
 }
 
 // LoadRooms loads all the rooms in the world.
@@ -56,7 +58,9 @@ func NewRoom(data *RoomData) *Room {
 	data.UUID = uuid.NewV4().String()
 
 	return &Room{
-		Data: data,
+		Data:        data,
+		Players:     make(map[string]*Player),
+		playerMutex: new(sync.RWMutex),
 	}
 }
 
@@ -111,5 +115,14 @@ func (r *Room) LinkedRoom(dir string) *Room {
 
 // AddPlayer adds a player to a room.
 func (r *Room) AddPlayer(player *Player) {
+	r.playerMutex.Lock()
+	defer r.playerMutex.Unlock()
+	r.Players[player.GetUUID()] = player
+}
 
+// RemovePlayer removes a player from a room.
+func (r *Room) RemovePlayer(player *Player) {
+	r.playerMutex.Lock()
+	defer r.playerMutex.Unlock()
+	delete(r.Players, player.GetUUID())
 }
