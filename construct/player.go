@@ -49,6 +49,7 @@ type playerData struct {
 	Password string
 	Room     string
 	Flags    map[string]bool
+	Prompt   string
 }
 
 // NewPlayer constructs a new player
@@ -111,13 +112,19 @@ func (p *Player) Buffer(text string, args ...interface{}) {
 
 // Flush will write the player buffer to the player and clear the buffer.
 func (p *Player) Flush() {
-	fmt.Fprint(p.connection, p.textBuffer+"\r")
+	fmt.Fprintf(p.connection, "%s\r", p.textBuffer)
+	if p.ShowPrompt() {
+		fmt.Fprintf(p.connection, "\n%s\r", p.Prompt())
+	}
 	p.textBuffer = ""
 }
 
 // Write output to a player.
 func (p *Player) Write(text string, args ...interface{}) {
 	fmt.Fprintf(p.connection, text+"\r", args...)
+	if p.ShowPrompt() {
+		fmt.Fprintf(p.connection, "\n%s\r", p.Prompt())
+	}
 }
 
 // Save a player to disk
@@ -261,4 +268,19 @@ func (p *Player) Flag(key string) bool {
 		return false
 	}
 	return v
+}
+
+// Prompt will return the generated/interpreted prompt for this player.
+func (p *Player) Prompt() string {
+	return p.Data.Prompt
+}
+
+// SetPrompt will set the prompt for this player.
+func (p *Player) SetPrompt(prompt string) {
+	p.Data.Prompt = prompt
+}
+
+// ShowPrompt returns true if a prompt should be shown.
+func (p *Player) ShowPrompt() bool {
+	return false
 }
