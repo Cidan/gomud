@@ -134,8 +134,16 @@ func (r *Room) RemovePlayer(player *Player) {
 // for each player in a concurrent safe manner.
 func (r *Room) AllPlayers(fn PlayerList) {
 	r.playerMutex.RLock()
-	defer r.playerMutex.RUnlock()
-	for uuid, p := range r.players {
-		fn(uuid, p)
+	// Compile a list of players locally and use that as the interator.
+	// This is done so that long running callback functions are localized
+	// and don't block room entrances.
+	var plist []*Player
+	for _, p := range r.players {
+		plist = append(plist, p)
+	}
+	r.playerMutex.RUnlock()
+
+	for _, p := range plist {
+		fn(p.GetUUID(), p)
 	}
 }
