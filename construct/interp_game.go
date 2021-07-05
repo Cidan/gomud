@@ -87,6 +87,12 @@ func (g *Game) DoLook(args ...string) error {
 	room := g.p.GetRoom()
 	g.p.Buffer("\n\n%s\n\n", room.GetName())
 	g.p.Buffer("  %s\n", room.GetDescription())
+	room.AllPlayers(func(uuid string, rp *Player) {
+		if rp == g.p {
+			return
+		}
+		g.p.Buffer("%s is here.\n", rp.GetName())
+	})
 	g.p.Flush()
 	return nil
 }

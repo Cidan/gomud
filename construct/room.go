@@ -26,9 +26,11 @@ type RoomData struct {
 // Room is the top level struct for a room.
 type Room struct {
 	Data        *RoomData
-	Players     map[string]*Player
+	players     map[string]*Player
 	playerMutex *sync.RWMutex
 }
+
+type PlayerList func(string, *Player)
 
 // LoadRooms loads all the rooms in the world.
 func LoadRooms() error {
@@ -59,7 +61,7 @@ func NewRoom(data *RoomData) *Room {
 
 	return &Room{
 		Data:        data,
-		Players:     make(map[string]*Player),
+		players:     make(map[string]*Player),
 		playerMutex: new(sync.RWMutex),
 	}
 }
@@ -117,12 +119,22 @@ func (r *Room) LinkedRoom(dir string) *Room {
 func (r *Room) AddPlayer(player *Player) {
 	r.playerMutex.Lock()
 	defer r.playerMutex.Unlock()
-	r.Players[player.GetUUID()] = player
+	r.players[player.GetUUID()] = player
 }
 
 // RemovePlayer removes a player from a room.
 func (r *Room) RemovePlayer(player *Player) {
 	r.playerMutex.Lock()
 	defer r.playerMutex.Unlock()
-	delete(r.Players, player.GetUUID())
+	delete(r.players, player.GetUUID())
+}
+
+// AllPlayers loops through all players in a room and runs the callback function
+// for each player in a concurrent safe manner.
+func (r *Room) AllPlayers(fn PlayerList) {
+	r.playerMutex.RLock()
+	defer r.playerMutex.RUnlock()
+	for uuid, p := range r.players {
+		fn(uuid, p)
+	}
 }
