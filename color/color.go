@@ -14,7 +14,8 @@ const (
 	white   = "\u001b[37m"
 )
 
-// Parse will convert color codes into ANSI colors.
+// Parse will convert color codes into ANSI colors. Color strings
+// will always be terminated with a reset marker to avoid bleeding.
 func Parse(input string) string {
 	str := input
 	str = strings.ReplaceAll(str, "{x", reset)
@@ -26,7 +27,7 @@ func Parse(input string) string {
 	str = strings.ReplaceAll(str, "{m", magenta)
 	str = strings.ReplaceAll(str, "{c", cyan)
 	str = strings.ReplaceAll(str, "{w", white)
-	return str
+	return str + Reset()
 }
 
 // Strip will remove color codes from a string.
@@ -42,4 +43,9 @@ func Strip(input string) string {
 	str = strings.ReplaceAll(str, "{c", "")
 	str = strings.ReplaceAll(str, "{w", "")
 	return str
+}
+
+// Reset returns the color reset string.
+func Reset() string {
+	return reset
 }

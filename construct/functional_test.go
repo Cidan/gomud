@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
 	"github.com/Cidan/gomud/mocks/server"
 	"github.com/stretchr/testify/assert"
@@ -245,7 +246,7 @@ func TestEndToEnd(t *testing.T) {
 	// Read the login text first.
 	loginText, err := reader.ReadString('\r')
 	assert.Nil(t, err)
-	assert.Equal(t, "Welcome, by what name are you known?\r", loginText)
+	assert.Equal(t, "Welcome, by what name are you known?"+color.Reset()+"\r", loginText)
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
@@ -259,7 +260,12 @@ func TestEndToEnd(t *testing.T) {
 			for _, response := range test.response {
 				recv, err := reader.ReadString('\r')
 				assert.Nil(t, err)
-				assert.Equal(t, response+"\r", recv)
+				if p.Flag("color") {
+					assert.Equal(t, response+color.Reset()+"\r", recv)
+				} else {
+					assert.Equal(t, response+"\r", recv)
+				}
+
 				// Slight cheat here, but easier for testing -- check if prompt
 				// should be shown and match for it.
 				// Also account for the skip in "Confirm Password" step as the player
@@ -267,7 +273,12 @@ func TestEndToEnd(t *testing.T) {
 				if p.ShowPrompt() && test.name != "Confirm Password" {
 					recv, err = reader.ReadString('\r')
 					assert.Nil(t, err)
-					assert.Equal(t, "\n\n"+p.Prompt()+"\r", recv)
+					if p.Flag("color") {
+						assert.Equal(t, "\n\n"+color.Parse(p.Prompt())+"\r", recv)
+					} else {
+						assert.Equal(t, "\n\n"+p.Prompt()+"\r", recv)
+
+					}
 				}
 			}
 		})

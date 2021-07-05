@@ -81,7 +81,8 @@ func NewPlayer() *Player {
 // setDefaults sets various defaults for new players.
 func (p *Player) setDefaults() {
 	p.EnableFlag("prompt")
-	p.SetPrompt("<%hh %mm %vv>")
+	p.EnableFlag("color")
+	p.SetPrompt("<%h{gh{x %m{bm{x %v{yv{x>")
 	p.ModifyStat("health", 100, false)
 	p.ModifyStat("mana", 100, false)
 	p.ModifyStat("move", 100, false)
@@ -156,7 +157,7 @@ func (p *Player) Write(text string, args ...interface{}) {
 		str = color.Strip(str)
 	}
 
-	fmt.Fprintf(p.connection, str+"\r")
+	fmt.Fprintf(p.connection, "%s\r", str)
 	p.WritePrompt()
 }
 
