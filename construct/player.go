@@ -82,7 +82,7 @@ func NewPlayer() *Player {
 func (p *Player) setDefaults() {
 	p.EnableFlag("prompt")
 	p.EnableFlag("color")
-	p.EnableFlag("automap")
+	p.DisableFlag("automap")
 	p.SetPrompt("<%h{gh{x %m{bm{x %v{yv{x>")
 	p.ModifyStat("health", 100, false)
 	p.ModifyStat("mana", 100, false)
