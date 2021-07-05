@@ -30,7 +30,7 @@ func hashPassword(pw string) string {
 // Player construct
 type Player struct {
 	connection    net.Conn
-	input         *bufio.Reader
+	input         chan string //*bufio.Reader
 	Data          *playerData
 	gameInterp    *Game
 	buildInterp   *BuildInterp
@@ -76,6 +76,7 @@ func NewPlayer() *Player {
 			Flags: make(map[string]bool),
 			Stats: &playerStats{},
 		},
+		input:     make(chan string),
 		flagMutex: new(sync.RWMutex),
 		ctx:       ctx,
 		cancel:    cancel,
@@ -116,7 +117,21 @@ func (p *Player) playerTick() {
 // SetConnection sets the player connection object
 func (p *Player) SetConnection(c net.Conn) {
 	p.connection = c
-	p.input = bufio.NewReader(c)
+	r := bufio.NewReader(c)
+	// Wrap our reader in a channel so that we can select it
+	// in the interp loop. When the connection is closed by p.Stop(),
+	// this loop will break. We call p.Stop() here in case the error
+	// is remote -- this will initiate a cleanup.
+	go func(r *bufio.Reader) {
+		for {
+			str, err := r.ReadString('\n')
+			if err != nil {
+				p.Stop()
+				break
+			}
+			p.input <- str
+		}
+	}(r)
 }
 
 // Start this player and their interp loop.
@@ -134,15 +149,9 @@ func (p *Player) Start() {
 			log.Info().Str("player", p.Data.UUID).Msg("Player context canceled, closing connection.")
 			p.connection.Close()
 			return
-		default:
-			str, err := p.input.ReadString('\n')
-			if err != nil {
-				log.Error().Err(err).Msg("Error reading player input.")
-				p.Stop()
-				return
-			}
+		case str := <-p.input:
 			str = strings.TrimSpace(str)
-			err = p.currentInterp.Read(str)
+			err := p.currentInterp.Read(str)
 			switch err {
 			case ErrCommandNotFound:
 				p.Write("Huh?")
