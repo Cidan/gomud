@@ -2,6 +2,7 @@ package construct
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -60,13 +61,16 @@ func NewGameInterp(p *Player) *Game {
 		Fn:    g.DoDown,
 	}).Add(&command{
 		name: "prompt",
-		Fn:   g.Prompt,
+		Fn:   g.DoPrompt,
 	}).Add(&command{
 		name: "color",
-		Fn:   g.Color,
+		Fn:   g.DoColor,
 	}).Add(&command{
 		name: "say",
 		Fn:   g.DoSay,
+	}).Add(&command{
+		name: "map",
+		Fn:   g.DoMap,
 	})
 
 	g.commands = commands
@@ -89,14 +93,27 @@ func (g *Game) Read(text string) error {
 // DoLook Look at the current room, an object, a player, or an NPC
 func (g *Game) DoLook(args ...string) error {
 	room := g.p.GetRoom()
-	g.p.Buffer("\n\n%s\n\n", room.GetName())
+	g.p.Buffer("\n\n%s\n", room.GetName())
+
+	// Display the automap if the player has it enabled.
+	if g.p.Flag("automap") {
+		g.p.Buffer("%s\n", room.Map(3))
+	} else {
+		g.p.Buffer("\n")
+	}
+
+	// Show the room description.
 	g.p.Buffer("  %s\n", room.GetDescription())
+
+	// List all the players in the room.
 	room.AllPlayers(func(uuid string, rp *Player) {
 		if rp == g.p {
 			return
 		}
 		g.p.Buffer("\n%s\n", rp.PlayerDescription())
 	})
+
+	// Flush our buffered output to the player.
 	g.p.Flush()
 	return nil
 }
@@ -196,8 +213,8 @@ func (g *Game) DoSay(args ...string) error {
 	return nil
 }
 
-// Prompt will either enable/disable a user prompt, or set the prompt string.
-func (g *Game) Prompt(args ...string) error {
+// DoPrompt will either enable/disable a user prompt, or set the prompt string.
+func (g *Game) DoPrompt(args ...string) error {
 	if len(args) == 0 {
 		if v := g.p.ToggleFlag("prompt"); v {
 			g.p.Write("Prompt enabled.")
@@ -211,12 +228,41 @@ func (g *Game) Prompt(args ...string) error {
 	return nil
 }
 
-// Color will toggle the color flag for a player.
-func (g *Game) Color(args ...string) error {
+// DoColor will toggle the color flag for a player.
+func (g *Game) DoColor(args ...string) error {
 	if v := g.p.ToggleFlag("color"); v {
 		g.p.Write("{gColor enabled!{x")
 	} else {
 		g.p.Write("Color disabled :(")
 	}
+	return nil
+}
+
+// DoMap will display a map with a given radius around the player.
+func (g *Game) DoMap(args ...string) error {
+	var radius int64
+	p := g.p
+	if len(args) > 0 {
+		switch {
+		case args[0] == "off":
+			p.DisableFlag("automap")
+			p.Write("Automap turned off.")
+			return nil
+		case args[0] == "on":
+			p.EnableFlag("automap")
+			p.Write("Automap turned on.")
+			return nil
+		default:
+			r, err := strconv.Atoi(args[0])
+			if err != nil {
+				p.Write("You must specify a number for your map size, i.e. 'map 5'")
+			}
+			radius = int64(r)
+		}
+	}
+	if radius > 3 || radius == 0 {
+		radius = int64(3)
+	}
+	g.p.Write(g.p.GetRoom().Map(radius))
 	return nil
 }

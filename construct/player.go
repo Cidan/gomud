@@ -82,6 +82,7 @@ func NewPlayer() *Player {
 func (p *Player) setDefaults() {
 	p.EnableFlag("prompt")
 	p.EnableFlag("color")
+	p.EnableFlag("automap")
 	p.SetPrompt("<%h{gh{x %m{bm{x %v{yv{x>")
 	p.ModifyStat("health", 100, false)
 	p.ModifyStat("mana", 100, false)
@@ -102,7 +103,6 @@ func (p *Player) Start() {
 	p.buildInterp = NewBuildInterp(p)
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
-	// TODO: Eventually split this line out to another function.
 	p.Login()
 
 	p.Write("Welcome, by what name are you known?")

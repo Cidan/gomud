@@ -147,3 +147,26 @@ func (r *Room) AllPlayers(fn PlayerList) {
 		fn(p.GetUUID(), p)
 	}
 }
+
+// Map generates a map with this room at the center, with the given radius.
+func (r *Room) Map(radius int64) string {
+	str := "\n  "
+	startX := r.Data.X - radius
+	startY := r.Data.Y + radius
+	z := r.Data.Z
+	for y := startY; y > r.Data.Y-radius; y-- {
+		for x := startX; x < r.Data.X+radius; x++ {
+			mroom := GetRoom(x, y, z)
+			switch {
+			case mroom == nil:
+				str += " "
+			case mroom == r:
+				str += "{R*{x"
+			default:
+				str += "{W#{x"
+			}
+		}
+		str += "\n  "
+	}
+	return str
+}
