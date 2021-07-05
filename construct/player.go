@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
 
@@ -135,18 +136,40 @@ func (p *Player) Buffer(text string, args ...interface{}) {
 
 // Flush will write the player buffer to the player and clear the buffer.
 func (p *Player) Flush() {
-	fmt.Fprintf(p.connection, "%s\r", p.textBuffer)
-	if p.ShowPrompt() {
-		fmt.Fprintf(p.connection, "\n\n%s\r", p.Prompt())
+	if p.Flag("color") {
+		p.textBuffer = color.Parse(p.textBuffer)
+	} else {
+		p.textBuffer = color.Strip(p.textBuffer)
 	}
+
+	fmt.Fprintf(p.connection, "%s\r", p.textBuffer)
+	p.WritePrompt()
 	p.textBuffer = ""
 }
 
 // Write output to a player.
 func (p *Player) Write(text string, args ...interface{}) {
-	fmt.Fprintf(p.connection, text+"\r", args...)
+	str := fmt.Sprintf(text, args...)
+	if p.Flag("color") {
+		str = color.Parse(str)
+	} else {
+		str = color.Strip(str)
+	}
+
+	fmt.Fprintf(p.connection, str+"\r")
+	p.WritePrompt()
+}
+
+// WritePrompt will write the player prompt to the player.
+func (p *Player) WritePrompt() {
+	str := p.Prompt()
+	if p.Flag("color") {
+		str = color.Parse(str)
+	} else {
+		str = color.Strip(str)
+	}
 	if p.ShowPrompt() {
-		fmt.Fprintf(p.connection, "\n\n%s\r", p.Prompt())
+		fmt.Fprintf(p.connection, "\n\n%s\r", str)
 	}
 }
 

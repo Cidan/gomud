@@ -191,6 +191,21 @@ var testCases = []testCase{
 		[]string{"save"},
 		[]string{"Your player has been saved."},
 	},
+	{
+		"Disable Prompt",
+		[]string{"prompt"},
+		[]string{"Prompt disabled."},
+	},
+	{
+		"Enable Prompt",
+		[]string{"prompt"},
+		[]string{"Prompt enabled."},
+	},
+	{
+		"Set Prompt",
+		[]string{"prompt <%h>"},
+		[]string{"Prompt set."},
+	},
 	// This should always be the last test. Do not change this case.
 	{
 		"Quit",
