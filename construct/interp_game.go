@@ -60,6 +60,9 @@ func NewGameInterp(p *Player) *Game {
 	}).Add(&command{
 		name: "prompt",
 		Fn:   g.Prompt,
+	}).Add(&command{
+		name: "color",
+		Fn:   g.Color,
 	})
 
 	g.commands = commands
@@ -171,5 +174,15 @@ func (g *Game) Prompt(args ...string) error {
 	}
 	g.p.SetPrompt(strings.Join(args, " "))
 	g.p.Write("Prompt set.")
+	return nil
+}
+
+// Color will toggle the color flag for a player.
+func (g *Game) Color(args ...string) error {
+	if v := g.p.ToggleFlag("color"); v {
+		g.p.Write("{gColor enabled!{x")
+	} else {
+		g.p.Write("Color disabled :(")
+	}
 	return nil
 }

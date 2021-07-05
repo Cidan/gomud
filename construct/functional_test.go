@@ -207,6 +207,16 @@ var testCases = []testCase{
 		[]string{"prompt <%h>"},
 		[]string{"Prompt set."},
 	},
+	{
+		"Disable Color",
+		[]string{"color"},
+		[]string{"Color disabled :("},
+	},
+	{
+		"Enable Color",
+		[]string{"color"},
+		[]string{"{gColor enabled!{x"},
+	},
 	// This should always be the last test. Do not change this case.
 	{
 		"Quit",
@@ -261,9 +271,9 @@ func TestEndToEnd(t *testing.T) {
 				recv, err := reader.ReadString('\r')
 				assert.Nil(t, err)
 				if p.Flag("color") {
-					assert.Equal(t, response+color.Reset()+"\r", recv)
+					assert.Equal(t, color.Parse(response)+"\r", recv)
 				} else {
-					assert.Equal(t, response+"\r", recv)
+					assert.Equal(t, color.Strip(response)+"\r", recv)
 				}
 
 				// Slight cheat here, but easier for testing -- check if prompt
