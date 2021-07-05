@@ -1,6 +1,7 @@
 package construct
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -63,6 +64,9 @@ func NewGameInterp(p *Player) *Game {
 	}).Add(&command{
 		name: "color",
 		Fn:   g.Color,
+	}).Add(&command{
+		name: "say",
+		Fn:   g.DoSay,
 	})
 
 	g.commands = commands
@@ -165,6 +169,30 @@ func (g *Game) DoUp(args ...string) error {
 // DoDown moves the player down.
 func (g *Game) DoDown(args ...string) error {
 	g.doDir("down")
+	return nil
+}
+
+// DoSay will send a message to all players in the local room.
+func (g *Game) DoSay(args ...string) error {
+	p := g.p
+
+	if len(args) == 0 {
+		p.Write("Say what?")
+		return nil
+	}
+
+	room := p.inRoom
+	if room == nil {
+		return fmt.Errorf("player %s not in a valid room", p.GetName())
+	}
+	text := strings.Join(args, " ")
+	room.AllPlayers(func(uuid string, rp *Player) {
+		if rp == p {
+			rp.Write("{yYou say, {x'%s{x'", text)
+			return
+		}
+		rp.Write("{y%s says, {x'%s{x'", p.GetName(), text)
+	})
 	return nil
 }
 

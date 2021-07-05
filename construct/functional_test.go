@@ -217,6 +217,16 @@ var testCases = []testCase{
 		[]string{"color"},
 		[]string{"{gColor enabled!{x"},
 	},
+	{
+		"Say Nothing",
+		[]string{"say"},
+		[]string{"Say what?"},
+	},
+	{
+		"Say hi",
+		[]string{"say hi"},
+		[]string{"{yYou say, {x'hi{x'"},
+	},
 	// This should always be the last test. Do not change this case.
 	{
 		"Quit",
