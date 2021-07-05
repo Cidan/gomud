@@ -91,7 +91,7 @@ func (g *Game) DoLook(args ...string) error {
 		if rp == g.p {
 			return
 		}
-		g.p.Buffer("%s is here.\n", rp.GetName())
+		g.p.Buffer("\n%s is here.\n", rp.GetName())
 	})
 	g.p.Flush()
 	return nil
