@@ -30,6 +30,7 @@ type Room struct {
 	playerMutex *sync.RWMutex
 }
 
+// PlayerList is the callback function signature for listing players in a room.
 type PlayerList func(string, *Player)
 
 // LoadRooms loads all the rooms in the world.
