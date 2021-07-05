@@ -57,6 +57,9 @@ func NewGameInterp(p *Player) *Game {
 		name:  "down",
 		alias: []string{"d"},
 		Fn:    g.DoDown,
+	}).Add(&command{
+		name: "prompt",
+		Fn:   g.Prompt,
 	})
 
 	g.commands = commands
@@ -153,5 +156,20 @@ func (g *Game) DoUp(args ...string) error {
 // DoDown moves the player down.
 func (g *Game) DoDown(args ...string) error {
 	g.doDir("down")
+	return nil
+}
+
+// Prompt will either enable/disable a user prompt, or set the prompt string.
+func (g *Game) Prompt(args ...string) error {
+	if len(args) == 0 {
+		if v := g.p.ToggleFlag("prompt"); v {
+			g.p.Write("Prompt enabled.")
+		} else {
+			g.p.Write("Prompt disabled.")
+		}
+		return nil
+	}
+	g.p.SetPrompt(strings.Join(args, " "))
+	g.p.Write("Prompt set.")
 	return nil
 }

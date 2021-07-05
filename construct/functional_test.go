@@ -6,6 +6,7 @@ package construct
 import (
 	"bufio"
 	"net"
+	"os"
 	"testing"
 
 	"github.com/Cidan/gomud/config"
@@ -251,11 +252,11 @@ func TestEndToEnd(t *testing.T) {
 				if p.ShowPrompt() && test.name != "Confirm Password" {
 					recv, err = reader.ReadString('\r')
 					assert.Nil(t, err)
-					assert.Equal(t, "\n"+p.Prompt()+"\r", recv)
+					assert.Equal(t, "\n\n"+p.Prompt()+"\r", recv)
 				}
 			}
 		})
 	}
-
+	os.RemoveAll(t.TempDir())
 	server.Close()
 }

@@ -84,6 +84,9 @@ func (p *Player) setDefaults() {
 	p.ModifyStat("health", 100, false)
 	p.ModifyStat("mana", 100, false)
 	p.ModifyStat("move", 100, false)
+	p.ModifyStat("max_health", 100, false)
+	p.ModifyStat("max_mana", 100, false)
+	p.ModifyStat("max_move", 100, false)
 }
 
 // SetConnection sets the player connection object
@@ -134,7 +137,7 @@ func (p *Player) Buffer(text string, args ...interface{}) {
 func (p *Player) Flush() {
 	fmt.Fprintf(p.connection, "%s\r", p.textBuffer)
 	if p.ShowPrompt() {
-		fmt.Fprintf(p.connection, "\n%s\r", p.Prompt())
+		fmt.Fprintf(p.connection, "\n\n%s\r", p.Prompt())
 	}
 	p.textBuffer = ""
 }
@@ -143,7 +146,7 @@ func (p *Player) Flush() {
 func (p *Player) Write(text string, args ...interface{}) {
 	fmt.Fprintf(p.connection, text+"\r", args...)
 	if p.ShowPrompt() {
-		fmt.Fprintf(p.connection, "\n%s\r", p.Prompt())
+		fmt.Fprintf(p.connection, "\n\n%s\r", p.Prompt())
 	}
 }
 
@@ -296,9 +299,13 @@ func (p *Player) Flag(key string) bool {
 
 // Prompt will return the generated/interpreted prompt for this player.
 func (p *Player) Prompt() string {
-	str := strings.ReplaceAll(p.Data.Prompt, "%h", fmt.Sprintf("%d", p.GetStat("health")))
+	str := p.Data.Prompt
+	str = strings.ReplaceAll(str, "%h", fmt.Sprintf("%d", p.GetStat("health")))
 	str = strings.ReplaceAll(str, "%m", fmt.Sprintf("%d", p.GetStat("mana")))
 	str = strings.ReplaceAll(str, "%v", fmt.Sprintf("%d", p.GetStat("move")))
+	str = strings.ReplaceAll(str, "%H", fmt.Sprintf("%d", p.GetStat("max_health")))
+	str = strings.ReplaceAll(str, "%M", fmt.Sprintf("%d", p.GetStat("max_mana")))
+	str = strings.ReplaceAll(str, "%V", fmt.Sprintf("%d", p.GetStat("max_move")))
 	return str
 }
 
@@ -325,6 +332,7 @@ func (p *Player) IsInGame() bool {
 	return false
 }
 
+// GetStat will return the value of a stat.
 func (p *Player) GetStat(key string) int64 {
 	switch key {
 	case "health":
@@ -333,9 +341,17 @@ func (p *Player) GetStat(key string) int64 {
 		return p.Data.Stats.Mana
 	case "move":
 		return p.Data.Stats.Move
+	case "max_health":
+		return p.Data.Stats.MaxHealth
+	case "max_mana":
+		return p.Data.Stats.MaxMana
+	case "max_move":
+		return p.Data.Stats.MaxMove
 	default:
-		return 0
+		// Panic and kill the whole game to avoid player corruption.
+		log.Panic().Str("stat", key).Msg("invalid stat, panic to stop player corruption")
 	}
+	return 0
 }
 
 // ModifyStat modifies a player's stat to the given number. If relative is set,
@@ -348,6 +364,12 @@ func (p *Player) ModifyStat(key string, value int64, relative bool) {
 		p.Data.Stats.Mana = setOrModify(p.Data.Stats.Mana, value, relative)
 	case "move":
 		p.Data.Stats.Move = setOrModify(p.Data.Stats.Move, value, relative)
+	case "max_health":
+		p.Data.Stats.MaxHealth = setOrModify(p.Data.Stats.MaxHealth, value, relative)
+	case "max_mana":
+		p.Data.Stats.MaxMana = setOrModify(p.Data.Stats.MaxMana, value, relative)
+	case "max_move":
+		p.Data.Stats.MaxMove = setOrModify(p.Data.Stats.MaxMove, value, relative)
 	}
 }
 
