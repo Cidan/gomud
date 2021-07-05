@@ -50,6 +50,16 @@ type playerData struct {
 	Room     string
 	Flags    map[string]bool
 	Prompt   string
+	Stats    *playerStats
+}
+
+type playerStats struct {
+	Health    int64
+	Mana      int64
+	Move      int64
+	MaxHealth int64
+	MaxMana   int64
+	MaxMove   int64
 }
 
 // NewPlayer constructs a new player
@@ -59,11 +69,21 @@ func NewPlayer() *Player {
 		Data: &playerData{
 			UUID:  uuid.NewV4().String(),
 			Flags: make(map[string]bool),
+			Stats: &playerStats{},
 		},
 		flagMutex: new(sync.RWMutex),
 	}
-
+	p.setDefaults()
 	return p
+}
+
+// setDefaults sets various defaults for new players.
+func (p *Player) setDefaults() {
+	p.EnableFlag("prompt")
+	p.SetPrompt("<%hh %mm %vv>")
+	p.ModifyStat("health", 100, false)
+	p.ModifyStat("mana", 100, false)
+	p.ModifyStat("move", 100, false)
 }
 
 // SetConnection sets the player connection object
@@ -162,6 +182,10 @@ func (p *Player) Load() (bool, error) {
 
 // Stop a player connection and unload the player from the world.
 func (p *Player) Stop() {
+	// TODO(lobato): Handle error
+	p.Save()
+	// Write a new line to ensure some clients don't buffer the last output.
+	p.connection.Write([]byte("\n"))
 	p.connection.Close()
 }
 
@@ -272,7 +296,10 @@ func (p *Player) Flag(key string) bool {
 
 // Prompt will return the generated/interpreted prompt for this player.
 func (p *Player) Prompt() string {
-	return p.Data.Prompt
+	str := strings.ReplaceAll(p.Data.Prompt, "%h", fmt.Sprintf("%d", p.GetStat("health")))
+	str = strings.ReplaceAll(str, "%m", fmt.Sprintf("%d", p.GetStat("mana")))
+	str = strings.ReplaceAll(str, "%v", fmt.Sprintf("%d", p.GetStat("move")))
+	return str
 }
 
 // SetPrompt will set the prompt for this player.
@@ -282,5 +309,51 @@ func (p *Player) SetPrompt(prompt string) {
 
 // ShowPrompt returns true if a prompt should be shown.
 func (p *Player) ShowPrompt() bool {
+	switch {
+	case p.IsInGame() && p.Flag("prompt"):
+		return true
+	default:
+		return false
+	}
+}
+
+// IsInGame returns true if the player is in the game world, i.e. not logging in/creating.
+func (p *Player) IsInGame() bool {
+	if p.currentInterp == p.gameInterp || p.currentInterp == p.buildInterp {
+		return true
+	}
 	return false
+}
+
+func (p *Player) GetStat(key string) int64 {
+	switch key {
+	case "health":
+		return p.Data.Stats.Health
+	case "mana":
+		return p.Data.Stats.Mana
+	case "move":
+		return p.Data.Stats.Move
+	default:
+		return 0
+	}
+}
+
+// ModifyStat modifies a player's stat to the given number. If relative is set,
+// stat will be modified by the given value instead of set to it.
+func (p *Player) ModifyStat(key string, value int64, relative bool) {
+	switch key {
+	case "health":
+		p.Data.Stats.Health = setOrModify(p.Data.Stats.Health, value, relative)
+	case "mana":
+		p.Data.Stats.Mana = setOrModify(p.Data.Stats.Mana, value, relative)
+	case "move":
+		p.Data.Stats.Move = setOrModify(p.Data.Stats.Move, value, relative)
+	}
+}
+
+func setOrModify(base int64, value int64, relative bool) int64 {
+	if relative {
+		return base + value
+	}
+	return value
 }

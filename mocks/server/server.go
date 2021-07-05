@@ -35,3 +35,7 @@ func (s *Server) Listen(port int, fn connectFn) error {
 	}
 	return nil
 }
+
+func (s *Server) Close() {
+	s.listener.Close()
+}

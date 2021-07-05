@@ -24,41 +24,50 @@ type testCase struct {
 var testCases = []testCase{
 	{
 		"Login Name",
+
 		[]string{"name"},
 		[]string{"Are you sure you want to be known as name?"},
 	},
 	{
 		"Back Out Login Name",
+
 		[]string{"no"},
 		[]string{"Okay, so what's your name?"},
 	},
 	{
 		"Actual Login Name",
+
 		[]string{"name"},
 		[]string{"Are you sure you want to be known as name?"},
 	},
 	{
 		"Confirm Name",
+
 		[]string{"yes"},
 		[]string{"Welcome name, please give me a password: "},
 	},
 	{
 		"New Password",
+
 		[]string{"pass123"},
 		[]string{"Confirm your password and type it again: "},
 	},
 	{
 		"Fail Confirm Password",
+
 		[]string{"wrongpass"},
 		[]string{"Passwords do not match\n", "Let's try this again. Please give me a new password: "},
 	},
 	{
 		"New Password Again",
+
 		[]string{"pass123"},
 		[]string{"Confirm your password and type it again: "},
 	},
+
 	{
 		"Confirm Password",
+
 		[]string{"pass123"},
 		[]string{"Entering the world!"},
 	},
@@ -67,6 +76,7 @@ var testCases = []testCase{
 		[]string{},
 		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
 	},
+
 	// Begin post game test cases -- add loaded world/player cases below this line.
 	// Build test commands
 	{
@@ -234,8 +244,18 @@ func TestEndToEnd(t *testing.T) {
 				recv, err := reader.ReadString('\r')
 				assert.Nil(t, err)
 				assert.Equal(t, response+"\r", recv)
+				// Slight cheat here, but easier for testing -- check if prompt
+				// should be shown and match for it.
+				// Also account for the skip in "Confirm Password" step as the player
+				// enters the game.
+				if p.ShowPrompt() && test.name != "Confirm Password" {
+					recv, err = reader.ReadString('\r')
+					assert.Nil(t, err)
+					assert.Equal(t, "\n"+p.Prompt()+"\r", recv)
+				}
 			}
 		})
 	}
 
+	server.Close()
 }
