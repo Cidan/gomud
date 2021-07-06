@@ -11,7 +11,6 @@ import (
 	"github.com/Cidan/gomud/path"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
-	"github.com/solarlune/paths"
 )
 
 var exitDirections = []string{"north", "south", "east", "west", "up", "down"}
@@ -221,7 +220,6 @@ func (r *Room) Map(radius int64) string {
 		var rx int64 = 0
 		for x := startX; x < r.Data.X+radius; x++ {
 			mr := gameMap.Cell(rx, ry, 0)
-			fmt.Printf("%v is cell at X: %d, Y: %d\n", mr, rx, ry)
 			mroom := GetRoom(x, y, z)
 			switch {
 			case mroom == nil:
@@ -252,13 +250,12 @@ func (r *Room) Map(radius int64) string {
 	//	pt := gameMap.GetPathFromCells(gameMap.Get(0, 0), gameMap.Get(1, 1), false, false)
 	//	pt.Length()
 	//	fmt.Printf(gameMap.DataToString())
-	fmt.Printf(gameMap.Map(0))
 	return str
 }
 
 // GeneratePath will generate a path to the target room. Use the path to navigate to the
 // given room.
-func (r *Room) GeneratePath(target *Room) *paths.Path {
+func (r *Room) GeneratePath(target *Room) *path.Path {
 	return nil
 }
 

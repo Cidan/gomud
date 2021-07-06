@@ -2,20 +2,22 @@
 package path
 
 import (
-	"fmt"
 	"strings"
 )
 
+// Path is a single generated path map.
 type Path struct {
 	radius int64
 	Cells  [][][]Cell
 }
 
+// Exit is an exit to a cell.
 type Exit struct {
 	Wall   bool
 	Closed bool
 }
 
+// Cell is a single item in the grid of a path.
 type Cell struct {
 	X     int64
 	Y     int64
@@ -24,6 +26,8 @@ type Cell struct {
 	Exits []Exit
 }
 
+// CellIterator is the function signature for iterating all cells
+// in the map.
 type CellIterator func(*Cell)
 
 // NewPath creates a new pathing map with a given radius of cells.
@@ -71,6 +75,7 @@ func (p *Path) AllCells(fn CellIterator) {
 	}
 }
 
+// Cell returns a cell at the given coordinates if it exists.
 func (p *Path) Cell(x, y, z int64) *Cell {
 	if int64(len(p.Cells)) <= x || int64(len(p.Cells[x])) <= y || int64(len(p.Cells[x][y])) <= z {
 		return nil
@@ -78,6 +83,7 @@ func (p *Path) Cell(x, y, z int64) *Cell {
 	return &p.Cells[y][x][z]
 }
 
+// Map will draw a 2D map of the current path on the given plane.
 func (p *Path) Map(z int64) string {
 	var map_str string
 	var str [][]string
@@ -94,7 +100,6 @@ func (p *Path) Map(z int64) string {
 		var mx int64 = 2
 		for x := range p.Cells[y] {
 			cell := p.Cells[y][x][z]
-			fmt.Printf("%d %d translate to %d %d\n", y, x, my, mx)
 			if !cell.Empty {
 				str[my][mx] = "#"
 			}
