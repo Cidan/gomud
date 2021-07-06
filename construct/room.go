@@ -13,6 +13,14 @@ import (
 )
 
 var exitDirections = []string{"north", "south", "east", "west", "up", "down"}
+var inverseDirections = map[string]string{
+	"north": "south",
+	"south": "north",
+	"east":  "west",
+	"west":  "east",
+	"up":    "down",
+	"down":  "up",
+}
 
 // RoomExit is an exit to a room. Exits decide state, such as open/closed doors,
 // walls, or portals.

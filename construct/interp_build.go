@@ -66,9 +66,22 @@ func (b *BuildInterp) doDigDir(dir string) error {
 	room.Data.Y = currentRoom.Data.Y + rY
 	room.Data.Z = currentRoom.Data.Z + rZ
 
+	for _, exitDir := range exitDirections {
+		if inverseDirections[dir] == exitDir {
+			continue
+		}
+		room.Data.DirectionExits[exitDir].Wall = true
+		currentRoom.Data.DirectionExits[dir].Wall = false
+	}
+
 	if err := room.Save(); err != nil {
 		return err
 	}
+
+	if err := currentRoom.Save(); err != nil {
+		return err
+	}
+
 	AddRoom(room)
 
 	b.p.ToRoom(room)
