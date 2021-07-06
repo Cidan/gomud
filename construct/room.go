@@ -226,15 +226,18 @@ func (r *Room) Map(radius int64) string {
 			switch {
 			case mroom == nil:
 				str += " "
+				mr.Empty = true
 				//				mr.Rune = ' '
 				//				mr.Walkable = false
 			case mroom == r:
 				str += "{R*{x"
+				mroom.pathAround(mr)
 				//				mr.Rune = '*'
 				//				mr.Walkable = true
 				//				mroom.pathAround(gameMap, mr)
 			default:
 				str += "{W#{x"
+				mroom.pathAround(mr)
 				//				mr.Rune = '#'
 				//				mr.Walkable = true
 				//				mroom.pathAround(gameMap, mr)
@@ -258,26 +261,24 @@ func (r *Room) GeneratePath(target *Room) *paths.Path {
 	return nil
 }
 
-func (r *Room) pathAround(gameMap *paths.Grid, cell *paths.Cell) {
+func (r *Room) pathAround(cell *path.Cell) {
 	if !r.CanExit("north") {
-		c := gameMap.Get(cell.X, cell.Y-1)
-		c.Walkable = false
-		c.Rune = '-'
+		cell.Exit("north").Wall = true
 	}
 	if !r.CanExit("south") {
-		c := gameMap.Get(cell.X, cell.Y+1)
-		c.Walkable = false
-		c.Rune = '-'
+		cell.Exit("south").Wall = true
 	}
 	if !r.CanExit("east") {
-		c := gameMap.Get(cell.X+1, cell.Y)
-		c.Walkable = false
-		c.Rune = '|'
+		cell.Exit("east").Wall = true
 	}
 	if !r.CanExit("west") {
-		c := gameMap.Get(cell.X-1, cell.Y)
-		c.Walkable = false
-		c.Rune = '|'
+		cell.Exit("west").Wall = true
+	}
+	if !r.CanExit("up") {
+		cell.Exit("up").Wall = true
+	}
+	if !r.CanExit("down") {
+		cell.Exit("down").Wall = true
 	}
 }
 

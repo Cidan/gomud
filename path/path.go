@@ -2,7 +2,7 @@
 package path
 
 type Path struct {
-	Cells [][][]*Cell
+	Cells [][][]Cell
 }
 
 type Exit struct {
@@ -14,7 +14,8 @@ type Cell struct {
 	X     int64
 	Y     int64
 	Z     int64
-	Exits []*Exit
+	Empty bool
+	Exits []Exit
 }
 
 type CellIterator func(*Cell)
@@ -24,21 +25,21 @@ func NewPath(radius int64) *Path {
 	size := radius * 2
 
 	// Initialize X
-	cells := make([][][]*Cell, size)
+	cells := make([][][]Cell, size)
 	for x := range cells {
 		// Initialize Y
-		cells[int64(x)] = make([][]*Cell, size)
+		cells[int64(x)] = make([][]Cell, size)
 		for y := range cells[int64(x)] {
 			// Initalize Z
-			cells[int64(x)][int64(y)] = make([]*Cell, size)
+			cells[int64(x)][int64(y)] = make([]Cell, size)
 			for z := range cells[int64(x)][int64(y)] {
 				// Make the cell exits
-				exits := make([]*Exit, 6)
+				exits := make([]Exit, 6)
 				for i := range exits {
-					exits[i] = &Exit{}
+					exits[i] = Exit{}
 				}
 				// Create the cell
-				cells[int64(x)][int64(y)][int64(z)] = &Cell{
+				cells[int64(x)][int64(y)][int64(z)] = Cell{
 					X:     int64(x),
 					Y:     int64(y),
 					Z:     int64(z),
@@ -57,7 +58,7 @@ func (p *Path) AllCells(fn CellIterator) {
 	for x := range p.Cells {
 		for y := range p.Cells[int64(x)] {
 			for z := range p.Cells[int64(y)] {
-				fn(p.Cells[int64(x)][int64(y)][int64(z)])
+				fn(&p.Cells[int64(x)][int64(y)][int64(z)])
 			}
 		}
 	}
@@ -67,24 +68,24 @@ func (p *Path) Cell(x, y, z int64) *Cell {
 	if int64(len(p.Cells)) <= x || int64(len(p.Cells[x])) <= y || int64(len(p.Cells[x][y])) <= z {
 		return nil
 	}
-	return p.Cells[x][y][z]
+	return &p.Cells[x][y][z]
 }
 
 // Exit returns an exit pointer for a cell.
 func (c *Cell) Exit(dir string) *Exit {
 	switch dir {
 	case "north":
-		return c.Exits[0]
+		return &c.Exits[0]
 	case "south":
-		return c.Exits[1]
+		return &c.Exits[1]
 	case "east":
-		return c.Exits[2]
+		return &c.Exits[2]
 	case "west":
-		return c.Exits[3]
+		return &c.Exits[3]
 	case "up":
-		return c.Exits[4]
+		return &c.Exits[4]
 	case "down":
-		return c.Exits[5]
+		return &c.Exits[5]
 	default:
 		return nil
 	}
