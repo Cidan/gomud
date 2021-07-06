@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/Cidan/gomud/config"
+	"github.com/Cidan/gomud/path"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 	"github.com/solarlune/paths"
@@ -209,45 +210,45 @@ func (r *Room) Map(radius int64) string {
 	// Create a pathable gameMap that is 4 times as large as the actual map.
 	// This is so we can inject doors and walls into the path.
 	// TODO(lobato): move the path code to a self contained function.
-	gameMap := paths.NewGrid(int(radius*4)+2, int(radius*4)+2, 3, 3)
+	gameMap := path.NewPath(radius)
 
 	str := "\n  "
 	startX := r.Data.X - radius
 	startY := r.Data.Y + radius
 	z := r.Data.Z
-	var ry = 2
+	var ry int64 = 0
 	for y := startY; y > r.Data.Y-radius; y-- {
-		var rx = 2
+		var rx int64 = 0
 		for x := startX; x < r.Data.X+radius; x++ {
-			mr := gameMap.Get(rx, ry)
+			mr := gameMap.Cell(rx, ry, 0)
 			fmt.Printf("%v is cell at X: %d, Y: %d\n", mr, rx, ry)
 			mroom := GetRoom(x, y, z)
 			switch {
 			case mroom == nil:
 				str += " "
-				mr.Rune = ' '
-				mr.Walkable = false
+				//				mr.Rune = ' '
+				//				mr.Walkable = false
 			case mroom == r:
 				str += "{R*{x"
-				mr.Rune = '*'
-				mr.Walkable = true
-				mroom.pathAround(gameMap, mr)
+				//				mr.Rune = '*'
+				//				mr.Walkable = true
+				//				mroom.pathAround(gameMap, mr)
 			default:
 				str += "{W#{x"
-				mr.Rune = '#'
-				mr.Walkable = true
-				mroom.pathAround(gameMap, mr)
+				//				mr.Rune = '#'
+				//				mr.Walkable = true
+				//				mroom.pathAround(gameMap, mr)
 			}
-			rx += 2
+			rx++
 		}
-		ry += 2
+		ry++
 		str += "\n  "
 	}
 	//	gameMap := paths.NewGridFromStringArrays(pathString, 5, 1)
 	//	gameMap.SetWalkable(' ', false)
-	pt := gameMap.GetPathFromCells(gameMap.Get(0, 0), gameMap.Get(1, 1), false, false)
-	pt.Length()
-	fmt.Printf(gameMap.DataToString())
+	//	pt := gameMap.GetPathFromCells(gameMap.Get(0, 0), gameMap.Get(1, 1), false, false)
+	//	pt.Length()
+	//	fmt.Printf(gameMap.DataToString())
 	return str
 }
 

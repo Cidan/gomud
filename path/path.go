@@ -63,6 +63,13 @@ func (p *Path) AllCells(fn CellIterator) {
 	}
 }
 
+func (p *Path) Cell(x, y, z int64) *Cell {
+	if int64(len(p.Cells)) <= x || int64(len(p.Cells[x])) <= y || int64(len(p.Cells[x][y])) <= z {
+		return nil
+	}
+	return p.Cells[x][y][z]
+}
+
 // Exit returns an exit pointer for a cell.
 func (c *Cell) Exit(dir string) *Exit {
 	switch dir {
