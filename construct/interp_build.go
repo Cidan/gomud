@@ -129,8 +129,7 @@ func (b *BuildInterp) DoBuild(args ...string) error {
 // Autobuild enables autobuild, which will automatically cause the player
 // to dig in the direction of their movement.
 func (b *BuildInterp) Autobuild(args ...string) error {
-	v := b.p.ToggleFlag("autobuild")
-	if v {
+	if v := b.p.ToggleFlag("autobuild"); v {
 		b.p.Write("Autobuild has been enabled.")
 	} else {
 		b.p.Write("Autobuild has been disabled.")
