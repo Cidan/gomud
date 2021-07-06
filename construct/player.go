@@ -109,6 +109,7 @@ func (p *Player) playerTick() {
 		case <-ticker.C:
 			break
 		case <-p.ctx.Done():
+			ticker.Stop()
 			return
 		}
 	}
