@@ -12,15 +12,26 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// RoomExit is an exit to a room. Exits decide state, such as open/closed doors,
+// walls, or portals.
+type RoomExit struct {
+	Direction string
+	Closed    bool
+	Locked    bool
+	Wall      bool
+}
+
 // RoomData struct for a room. This data is saved to durable storage when a room is
 // saved.
 type RoomData struct {
-	UUID        string
-	Name        string
-	Description string
-	X           int64
-	Y           int64
-	Z           int64
+	UUID           string
+	Name           string
+	Description    string
+	X              int64
+	Y              int64
+	Z              int64
+	DirectionExits []*RoomExit
+	OtherExits     []*RoomExit
 }
 
 // Room is the top level struct for a room.
@@ -59,7 +70,6 @@ func LoadRooms() error {
 // NewRoom construct.
 func NewRoom(data *RoomData) *Room {
 	data.UUID = uuid.NewV4().String()
-
 	return &Room{
 		Data:        data,
 		players:     make(map[string]*Player),
