@@ -154,12 +154,15 @@ func (g *Game) DoBuild(args ...string) error {
 
 // doDir for moving a player in a direction or through a portal.
 func (g *Game) doDir(dir string) {
-	target := g.p.GetRoom().LinkedRoom(dir)
-	if target != nil {
+	room := g.p.GetRoom()
+
+	if room.CanExit(dir) {
+		target := room.LinkedRoom(dir)
 		g.p.ToRoom(target)
 		g.p.Command("look")
 		return
 	}
+
 	g.p.Write("You can't go that way!")
 	return
 }
