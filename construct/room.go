@@ -12,6 +12,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+var exitDirections = []string{"north", "south", "east", "west", "up", "down"}
+
 // RoomExit is an exit to a room. Exits decide state, such as open/closed doors,
 // walls, or portals.
 type RoomExit struct {
@@ -74,12 +76,19 @@ func LoadRooms() error {
 
 // NewRoom construct.
 func NewRoom() *Room {
+	// The directional exit map should be immutable, never edit
+	// the map it self. Concurrent reads of exits is okay.
+	exits := make(map[string]*RoomExit)
+	for _, dir := range exitDirections {
+		exits[dir] = &RoomExit{}
+	}
+
 	return &Room{
 		Data: &RoomData{
 			UUID:           uuid.NewV4().String(),
 			Name:           "New Room",
 			Description:    "This is a new room, with a new description.",
-			DirectionExits: make(map[string]*RoomExit),
+			DirectionExits: exits,
 			OtherExits:     make(map[string]*RoomExit),
 		},
 		players:     make(map[string]*Player),
@@ -206,4 +215,21 @@ func (r *Room) Map(radius int64) string {
 		str += "\n  "
 	}
 	return str
+}
+
+func (r *Room) CanExit(dir string) bool {
+	if r.LinkedRoom(dir) == nil {
+		return false
+	}
+	exit := r.Data.DirectionExits[dir]
+	if exit.Closed {
+		return false
+	}
+	if exit.Locked {
+		return false
+	}
+	if exit.Wall {
+		return false
+	}
+	return true
 }

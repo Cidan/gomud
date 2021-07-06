@@ -2,7 +2,6 @@ package construct
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -98,19 +97,10 @@ func (g *Game) DoLook(args ...string) error {
 	// Display the room name.
 	g.p.Buffer("\n\n%s\n", room.GetName())
 
-	g.p.Buffer("{c[Exits:")
 	// Display exits.
-	if len(room.Data.DirectionExits) == 0 {
-		g.p.Buffer(" none")
-	} else {
-		var exitList []string
-		for dir, exit := range room.Data.DirectionExits {
-			if !exit.Closed && !exit.Wall {
-				exitList = append(exitList, dir)
-			}
-		}
-		sort.Strings(exitList)
-		for _, dir := range exitList {
+	g.p.Buffer("{c[Exits:")
+	for _, dir := range exitDirections {
+		if room.CanExit(dir) {
 			g.p.Buffer(" %s", dir)
 		}
 	}
