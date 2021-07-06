@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"sync"
 
@@ -204,13 +205,8 @@ func (r *Room) AllPlayers(fn PlayerList) {
 }
 
 // Map generates a map with this room at the center, with the given radius.
-// TODO(lobato): Implement https://github.com/SolarLune/paths here as well.
+// This is a "fast" implementation with no allocations, for use in look.
 func (r *Room) Map(radius int64) string {
-	// Create a pathable gameMap that is 4 times as large as the actual map.
-	// This is so we can inject doors and walls into the path.
-	// TODO(lobato): move the path code to a self contained function.
-	gameMap := path.NewMap(radius)
-
 	str := "\n  "
 	startX := r.Data.X - radius
 	startY := r.Data.Y + radius
@@ -219,44 +215,55 @@ func (r *Room) Map(radius int64) string {
 	for y := startY; y > r.Data.Y-radius; y-- {
 		var rx int64 = 0
 		for x := startX; x < r.Data.X+radius; x++ {
-			mr := gameMap.Cell(rx, ry, 0)
 			mroom := GetRoom(x, y, z)
 			switch {
 			case mroom == nil:
 				str += " "
-				mr.Empty = true
-				//				mr.Rune = ' '
-				//				mr.Walkable = false
 			case mroom == r:
 				str += "{R*{x"
-				mroom.pathAround(mr)
-				//				mr.Rune = '*'
-				//				mr.Walkable = true
-				//				mroom.pathAround(gameMap, mr)
 			default:
 				str += "{W#{x"
-				mroom.pathAround(mr)
-				//				mr.Rune = '#'
-				//				mr.Walkable = true
-				//				mroom.pathAround(gameMap, mr)
 			}
 			rx++
 		}
 		ry++
 		str += "\n  "
 	}
-	//	gameMap := paths.NewGridFromStringArrays(pathString, 5, 1)
-	//	gameMap.SetWalkable(' ', false)
-	//	pt := gameMap.GetPathFromCells(gameMap.Get(0, 0), gameMap.Get(1, 1), false, false)
-	//	pt.Length()
-	//	fmt.Printf(gameMap.DataToString())
+
 	return str
 }
 
 // GeneratePath will generate a path to the target room. Use the path to navigate to the
-// given room.
+// given room. This is a heavy implementation and should only be used when a path
+// to a room is needed, i.e. hunting another player, mob, or object.
 func (r *Room) GeneratePath(target *Room) *path.Path {
-	return nil
+	dx := math.Abs(float64(r.Data.X - target.Data.X))
+	dy := math.Abs(float64(r.Data.Y - target.Data.Y))
+	dz := math.Abs(float64(r.Data.Z - target.Data.Z))
+
+	max := math.Max(dx, dy)
+	radius := int64(math.Max(max, dz))
+
+	gameMap := path.NewMap(radius)
+	startX := r.Data.X - radius
+	startY := r.Data.Y + radius
+	startZ := r.Data.Z - radius
+
+	for y := startY; y > r.Data.Y-radius; y-- {
+		for x := startX; x < r.Data.X+radius; x++ {
+			for z := startZ; z < r.Data.Z+radius; z++ {
+				mroom := GetRoom(x, y, z)
+				cell := gameMap.Cell(x, y, z)
+				switch {
+				case mroom == nil:
+					cell.Empty = true
+				default:
+					mroom.pathAround(cell)
+				}
+			}
+		}
+	}
+	return gameMap.Path(nil, nil)
 }
 
 func (r *Room) pathAround(cell *path.Cell) {

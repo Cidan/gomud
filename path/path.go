@@ -86,6 +86,10 @@ func (p *Map) Cell(x, y, z int64) *Cell {
 	return &p.Cells[y][x][z]
 }
 
+func (p *Map) Path(from *Cell, to *Cell) *Path {
+	return &Path{}
+}
+
 // Map will draw a 2D map of the current path on the given plane.
 func (p *Map) DrawMap(z int64) string {
 	var map_str string
