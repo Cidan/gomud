@@ -208,7 +208,8 @@ func (r *Room) AllPlayers(fn PlayerList) {
 func (r *Room) Map(radius int64) string {
 	// Create a pathable gameMap that is 4 times as large as the actual map.
 	// This is so we can inject doors and walls into the path.
-	gameMap := paths.NewGrid(int(radius*4)+2, int(radius*4)+2, 1, 1)
+	// TODO(lobato): move the path code to a self contained function.
+	gameMap := paths.NewGrid(int(radius*4)+2, int(radius*4)+2, 3, 3)
 
 	str := "\n  "
 	startX := r.Data.X - radius
@@ -244,8 +245,16 @@ func (r *Room) Map(radius int64) string {
 	}
 	//	gameMap := paths.NewGridFromStringArrays(pathString, 5, 1)
 	//	gameMap.SetWalkable(' ', false)
+	pt := gameMap.GetPathFromCells(gameMap.Get(0, 0), gameMap.Get(1, 1), false, false)
+	pt.Length()
 	fmt.Printf(gameMap.DataToString())
 	return str
+}
+
+// GeneratePath will generate a path to the target room. Use the path to navigate to the
+// given room.
+func (r *Room) GeneratePath(target *Room) *paths.Path {
+	return nil
 }
 
 func (r *Room) pathAround(gameMap *paths.Grid, cell *paths.Cell) {
