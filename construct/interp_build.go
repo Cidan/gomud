@@ -29,6 +29,9 @@ func NewBuildInterp(p *Player) *BuildInterp {
 	}).Add(&command{
 		name: "autobuild",
 		Fn:   b.Autobuild,
+	}).Add(&command{
+		name: "set",
+		Fn:   b.DoSet,
 	})
 	b.commands = commands
 	return b
@@ -133,4 +136,52 @@ func (b *BuildInterp) Autobuild(args ...string) error {
 		b.p.Write("Autobuild has been disabled.")
 	}
 	return nil
+}
+
+func (b *BuildInterp) DoSet(args ...string) error {
+	if len(args) == 0 {
+		b.p.Write("Set what?")
+		return nil
+	}
+	args = strings.SplitN(args[0], " ", 2)
+	switch args[0] {
+	case "room":
+		return b.setRoom(args[1:]...)
+	default:
+		b.p.Write("No such thing to set.")
+		return nil
+	}
+}
+
+func (b *BuildInterp) setRoom(args ...string) error {
+	p := b.p
+	room := p.GetRoom()
+
+	if len(args) == 0 {
+		p.Write("What do you want to set on the room?")
+		return nil
+	}
+	args = strings.SplitN(args[0], " ", 2)
+	switch args[0] {
+	case "name":
+		if len(args) < 2 {
+			p.Write("What do you want to set the description to?")
+			return nil
+		}
+		room.SetName(args[1])
+		p.Write("Name set.")
+		return room.Save()
+	case "description":
+		if len(args) < 2 {
+			p.Write("What do you want to set the description to?")
+			return nil
+		}
+		room.SetDescription(args[1])
+		p.Write("Description set.")
+		return room.Save()
+	default:
+		p.Write("There's no such room property to set.")
+		return nil
+	}
+
 }
