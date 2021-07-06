@@ -39,6 +39,7 @@ type Room struct {
 	Data        *RoomData
 	players     map[string]*Player
 	playerMutex *sync.RWMutex
+	exitsMutex  *sync.RWMutex
 }
 
 // PlayerList is the callback function signature for listing players in a room.
@@ -83,6 +84,7 @@ func NewRoom() *Room {
 		},
 		players:     make(map[string]*Player),
 		playerMutex: new(sync.RWMutex),
+		exitsMutex:  new(sync.RWMutex),
 	}
 }
 
