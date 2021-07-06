@@ -38,25 +38,22 @@ func startDebugServer() {
 }
 
 func makeDefaultRoomSet() {
-	room := construct.NewRoom(&construct.RoomData{
-		Name:        "The Alpha",
-		Description: "It all starts here.",
-		X:           0,
-		Y:           0,
-		Z:           0,
-	})
+	room := construct.NewRoom()
+	room.SetName("The Alpha")
+	room.SetDescription("It all starts here.")
+	room.SetCoordinates(0, 0, 0)
+
 	err := room.Save()
 	if err != nil {
 		panic(err)
 	}
 	construct.AddRoom(room)
-	room = construct.NewRoom(&construct.RoomData{
-		Name:        "The Omega",
-		Description: "It all ends here.",
-		X:           1,
-		Y:           0,
-		Z:           0,
-	})
+
+	room = construct.NewRoom()
+	room.SetName("The Omega")
+	room.SetDescription("It all ends here.")
+	room.SetCoordinates(1, 0, 0)
+
 	err = room.Save()
 	if err != nil {
 		panic(err)

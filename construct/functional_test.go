@@ -236,13 +236,9 @@ var testCases = []testCase{
 }
 
 func makeStartingRoom() {
-	room := NewRoom(&RoomData{
-		Name:        "The Alpha",
-		Description: "It all starts here.",
-		X:           0,
-		Y:           0,
-		Z:           0,
-	})
+	room := NewRoom()
+	room.Data.Name = "The Alpha"
+	room.Data.Description = "It all starts here."
 	AddRoom(room)
 }
 

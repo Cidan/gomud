@@ -55,14 +55,13 @@ func (b *BuildInterp) doDigDir(dir string) error {
 		b.p.Write("There's already a room '%s'.\n", dir)
 		return nil
 	}
+
 	rX, rY, rZ := b.getRelativeDir(dir)
-	room := NewRoom(&RoomData{
-		Name:        "New Room",
-		Description: "This is a new room, with a new description.",
-		X:           currentRoom.Data.X + rX,
-		Y:           currentRoom.Data.Y + rY,
-		Z:           currentRoom.Data.Z + rZ,
-	})
+
+	room := NewRoom()
+	room.Data.X = currentRoom.Data.X + rX
+	room.Data.Y = currentRoom.Data.Y + rY
+	room.Data.Z = currentRoom.Data.Z + rZ
 
 	if err := room.Save(); err != nil {
 		return err

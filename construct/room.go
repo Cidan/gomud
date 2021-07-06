@@ -30,8 +30,8 @@ type RoomData struct {
 	X              int64
 	Y              int64
 	Z              int64
-	DirectionExits []*RoomExit
-	OtherExits     []*RoomExit
+	DirectionExits map[string]*RoomExit
+	OtherExits     map[string]*RoomExit
 }
 
 // Room is the top level struct for a room.
@@ -56,22 +56,31 @@ func LoadRooms() error {
 		if err != nil {
 			return err
 		}
-		var roomData RoomData
-		err = json.Unmarshal(data, &roomData)
+		room := NewRoom()
+		err = json.Unmarshal(data, &room.Data)
 		if err != nil {
 			return err
 		}
-		log.Debug().Str("name", roomData.Name).Msg("loaded room")
-		AddRoom(NewRoom(&roomData))
+		log.Debug().Str("name", room.GetName()).Msg("loaded room")
+		AddRoom(room)
+		// Save the room after load in order to apply any possible migrations.
+		if err := room.Save(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // NewRoom construct.
-func NewRoom(data *RoomData) *Room {
-	data.UUID = uuid.NewV4().String()
+func NewRoom() *Room {
 	return &Room{
-		Data:        data,
+		Data: &RoomData{
+			UUID:           uuid.NewV4().String(),
+			Name:           "New Room",
+			Description:    "This is a new room, with a new description.",
+			DirectionExits: make(map[string]*RoomExit),
+			OtherExits:     make(map[string]*RoomExit),
+		},
 		players:     make(map[string]*Player),
 		playerMutex: new(sync.RWMutex),
 	}
@@ -82,9 +91,25 @@ func (r *Room) GetName() string {
 	return r.Data.Name
 }
 
+//SetName sets the name of this room.
+func (r *Room) SetName(name string) {
+	r.Data.Name = name
+}
+
 // GetDescription returns the human readable description of the room.
 func (r *Room) GetDescription() string {
 	return r.Data.Description
+}
+
+// SetDescription sets the description of this room.
+func (r *Room) SetDescription(desc string) {
+	r.Data.Description = desc
+}
+
+func (r *Room) SetCoordinates(x, y, z int64) {
+	r.Data.X = x
+	r.Data.Y = y
+	r.Data.Z = z
 }
 
 // GetIndex gets the room index as a string.
