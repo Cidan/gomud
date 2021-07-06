@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewPath(t *testing.T) {
-	path := NewPath(10)
-	assert.NotNil(t, path)
+func TestNewMap(t *testing.T) {
+	gmap := NewMap(10)
+	assert.NotNil(t, gmap)
 }

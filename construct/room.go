@@ -209,7 +209,7 @@ func (r *Room) Map(radius int64) string {
 	// Create a pathable gameMap that is 4 times as large as the actual map.
 	// This is so we can inject doors and walls into the path.
 	// TODO(lobato): move the path code to a self contained function.
-	gameMap := path.NewPath(radius)
+	gameMap := path.NewMap(radius)
 
 	str := "\n  "
 	startX := r.Data.X - radius

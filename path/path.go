@@ -6,7 +6,7 @@ import (
 )
 
 // Path is a single generated path map.
-type Path struct {
+type Map struct {
 	radius int64
 	Cells  [][][]Cell
 }
@@ -26,12 +26,15 @@ type Cell struct {
 	Exits []Exit
 }
 
+// Path is a generated path between two points on a map.
+type Path struct{}
+
 // CellIterator is the function signature for iterating all cells
 // in the map.
 type CellIterator func(*Cell)
 
-// NewPath creates a new pathing map with a given radius of cells.
-func NewPath(radius int64) *Path {
+// NewMap creates a new pathing map with a given radius of cells.
+func NewMap(radius int64) *Map {
 	size := radius * 2
 
 	// Initialize Y
@@ -58,14 +61,14 @@ func NewPath(radius int64) *Path {
 			}
 		}
 	}
-	return &Path{
+	return &Map{
 		Cells:  cells,
 		radius: radius,
 	}
 }
 
 // AllCells calls the given iterator for each cell.
-func (p *Path) AllCells(fn CellIterator) {
+func (p *Map) AllCells(fn CellIterator) {
 	for y := range p.Cells {
 		for x := range p.Cells[int64(y)] {
 			for z := range p.Cells[int64(y)][int64(x)] {
@@ -76,7 +79,7 @@ func (p *Path) AllCells(fn CellIterator) {
 }
 
 // Cell returns a cell at the given coordinates if it exists.
-func (p *Path) Cell(x, y, z int64) *Cell {
+func (p *Map) Cell(x, y, z int64) *Cell {
 	if int64(len(p.Cells)) <= x || int64(len(p.Cells[x])) <= y || int64(len(p.Cells[x][y])) <= z {
 		return nil
 	}
@@ -84,7 +87,7 @@ func (p *Path) Cell(x, y, z int64) *Cell {
 }
 
 // Map will draw a 2D map of the current path on the given plane.
-func (p *Path) Map(z int64) string {
+func (p *Map) DrawMap(z int64) string {
 	var map_str string
 	var str [][]string
 	str = make([][]string, (p.radius*4)+2)
