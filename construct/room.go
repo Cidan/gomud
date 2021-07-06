@@ -252,6 +252,7 @@ func (r *Room) Map(radius int64) string {
 	//	pt := gameMap.GetPathFromCells(gameMap.Get(0, 0), gameMap.Get(1, 1), false, false)
 	//	pt.Length()
 	//	fmt.Printf(gameMap.DataToString())
+	fmt.Printf(gameMap.Map(0))
 	return str
 }
 
