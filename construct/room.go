@@ -10,6 +10,7 @@ import (
 	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
+	"github.com/solarlune/paths"
 )
 
 var exitDirections = []string{"north", "south", "east", "west", "up", "down"}
@@ -203,26 +204,71 @@ func (r *Room) AllPlayers(fn PlayerList) {
 }
 
 // Map generates a map with this room at the center, with the given radius.
+// TODO(lobato): Implement https://github.com/SolarLune/paths here as well.
 func (r *Room) Map(radius int64) string {
+	// Create a pathable gameMap that is 4 times as large as the actual map.
+	// This is so we can inject doors and walls into the path.
+	gameMap := paths.NewGrid(int(radius*4)+2, int(radius*4)+2, 1, 1)
+
 	str := "\n  "
 	startX := r.Data.X - radius
 	startY := r.Data.Y + radius
 	z := r.Data.Z
+	var ry = 2
 	for y := startY; y > r.Data.Y-radius; y-- {
+		var rx = 2
 		for x := startX; x < r.Data.X+radius; x++ {
+			mr := gameMap.Get(rx, ry)
+			fmt.Printf("%v is cell at X: %d, Y: %d\n", mr, rx, ry)
 			mroom := GetRoom(x, y, z)
 			switch {
 			case mroom == nil:
 				str += " "
+				mr.Rune = ' '
+				mr.Walkable = false
 			case mroom == r:
 				str += "{R*{x"
+				mr.Rune = '*'
+				mr.Walkable = true
+				mroom.pathAround(gameMap, mr)
 			default:
 				str += "{W#{x"
+				mr.Rune = '#'
+				mr.Walkable = true
+				mroom.pathAround(gameMap, mr)
 			}
+			rx += 2
 		}
+		ry += 2
 		str += "\n  "
 	}
+	//	gameMap := paths.NewGridFromStringArrays(pathString, 5, 1)
+	//	gameMap.SetWalkable(' ', false)
+	fmt.Printf(gameMap.DataToString())
 	return str
+}
+
+func (r *Room) pathAround(gameMap *paths.Grid, cell *paths.Cell) {
+	if !r.CanExit("north") {
+		c := gameMap.Get(cell.X, cell.Y-1)
+		c.Walkable = false
+		c.Rune = '-'
+	}
+	if !r.CanExit("south") {
+		c := gameMap.Get(cell.X, cell.Y+1)
+		c.Walkable = false
+		c.Rune = '-'
+	}
+	if !r.CanExit("east") {
+		c := gameMap.Get(cell.X+1, cell.Y)
+		c.Walkable = false
+		c.Rune = '|'
+	}
+	if !r.CanExit("west") {
+		c := gameMap.Get(cell.X-1, cell.Y)
+		c.Walkable = false
+		c.Rune = '|'
+	}
 }
 
 func (r *Room) CanExit(dir string) bool {
