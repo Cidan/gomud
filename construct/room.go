@@ -328,22 +328,21 @@ func (r *Room) IsExitWall(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return true
 	}
-	exit := r.Data.DirectionExits[dir]
-	if exit.Wall {
-		return true
-	}
-	return false
+	return r.Data.DirectionExits[dir].Wall
 }
 
 func (r *Room) IsExitClosed(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
-	exit := r.Data.DirectionExits[dir]
-	if exit.Closed {
-		return true
+	return r.Data.DirectionExits[dir].Closed
+}
+
+func (r *Room) IsExitDoor(dir string) bool {
+	if r.LinkedRoom(dir) == nil {
+		return false
 	}
-	return false
+	return r.Data.DirectionExits[dir].Door
 }
 
 func (r *Room) CanExit(dir string) bool {
