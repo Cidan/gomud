@@ -482,6 +482,8 @@ func setOrModify(base int64, value int64, relative bool) int64 {
 // a much more accurate view.
 func (p *Player) Map(radius int64) string {
 	var output string
+
+	// Create the map array that stores map runes.
 	str := make([][]string, (radius*2)+2)
 	for y := range str {
 		str[y] = make([]string, (radius*2)+2)
@@ -490,37 +492,61 @@ func (p *Player) Map(radius int64) string {
 		}
 	}
 
+	// Keep a record of rooms walked.
 	walked := make(map[string]bool)
+
+	// Create a rooms channel that contains the rooms we need to walk and insert
+	// the player starting room as the first room, at the center of the map.
 	rooms := make(chan roomWalk, radius*20)
 	rooms <- roomWalk{p.inRoom, radius, radius}
+
+	// Loop until the channel contains no more entries.
 L:
 	for {
 		select {
 		case room := <-rooms:
+			// Skip this room if it's out of bounds, which prevents infinite map generation. Note
+			// that for the map, 0,0 is the top left -- it should never go below 0, nor should
+			// it be larger than the radius + offset.
 			if room.mx > (radius+4) || room.my > (radius+4) || room.mx <= 0 || room.my <= 0 {
 				continue
 			}
+			// Scan each direction for the current room.
 			for _, dir := range exitDirections {
 				if room.room.CanExit(dir) {
+					// There is an exit in this direction, get the room reference by that direction.
 					nextRoom := room.room.LinkedRoom(dir)
+
+					// If we've already walked that room, skip, otherwise mark.
 					if _, ok := walked[nextRoom.Data.UUID]; ok {
 						continue
 					}
 					walked[nextRoom.Data.UUID] = true
+
+					// Get the relative translation for the direction.
 					x, y, _ := getRelativeDir(dir)
+
+					// Mark the exit room on the map.
 					str[room.my-y][room.mx+x] = "#"
+
+					// Add the exit room to the queue to be picked up on the next loop.
 					rooms <- roomWalk{nextRoom, room.mx + x, room.my - y}
 				}
 			}
 		default:
+			// Queue was empty, close the channel and move on.
 			close(rooms)
 			break L
 		}
 	}
 
+	// The player is always at the center.
 	str[radius][radius] = "{R*{x"
+
+	// Assemble our output string and return it.
 	for row := range str {
 		output += "  " + strings.Join(str[row], "") + "\n"
 	}
+
 	return output
 }
