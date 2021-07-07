@@ -287,18 +287,41 @@ func (r *Room) pathAround(cell *path.Cell) {
 	}
 }
 
+func (r *Room) IsExit(dir string) bool {
+	if r.LinkedRoom(dir) == nil {
+		return false
+	}
+	return true
+}
+
+func (r *Room) IsExitWall(dir string) bool {
+	if r.LinkedRoom(dir) == nil {
+		return true
+	}
+	exit := r.Data.DirectionExits[dir]
+	if exit.Wall {
+		return true
+	}
+	return false
+}
+
+func (r *Room) IsExitClosed(dir string) bool {
+	if r.LinkedRoom(dir) == nil {
+		return true
+	}
+	exit := r.Data.DirectionExits[dir]
+	if exit.Closed {
+		return true
+	}
+	return false
+}
+
 func (r *Room) CanExit(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
 	exit := r.Data.DirectionExits[dir]
-	if exit.Closed {
-		return false
-	}
-	if exit.Locked {
-		return false
-	}
-	if exit.Wall {
+	if exit.Closed || exit.Wall {
 		return false
 	}
 	return true

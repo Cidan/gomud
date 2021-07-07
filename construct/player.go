@@ -458,6 +458,11 @@ func (p *Player) PlayerDescription() string {
 	return fmt.Sprintf("%s is here.", p.GetName())
 }
 
+func (p *Player) CanExit(dir string) bool {
+	room := p.inRoom
+	return room.CanExit(dir)
+}
+
 func setOrModify(base int64, value int64, relative bool) int64 {
 	if relative {
 		return base + value

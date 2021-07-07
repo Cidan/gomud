@@ -100,7 +100,7 @@ func (g *Game) DoLook(args ...string) error {
 	// Display exits.
 	g.p.Buffer("{c[Exits:")
 	for _, dir := range exitDirections {
-		if room.CanExit(dir) {
+		if g.p.CanExit(dir) {
 			g.p.Buffer(" %s", dir)
 		}
 	}
@@ -156,10 +156,15 @@ func (g *Game) DoBuild(args ...string) error {
 func (g *Game) doDir(dir string) {
 	room := g.p.GetRoom()
 
-	if room.CanExit(dir) {
+	if g.p.CanExit(dir) {
 		target := room.LinkedRoom(dir)
 		g.p.ToRoom(target)
 		g.p.Command("look")
+		return
+	}
+
+	if room.IsExitClosed(dir) {
+		g.p.Write("The exit %s is closed!", dir)
 		return
 	}
 
