@@ -44,3 +44,21 @@ func AddRoom(r *Room) {
 func WorldSize() int64 {
 	return worldSize
 }
+
+func getRelativeDir(dir string) (x, y, z int64) {
+	switch dir {
+	case "north":
+		return 0, 1, 0
+	case "south":
+		return 0, -1, 0
+	case "east":
+		return 1, 0, 0
+	case "west":
+		return -1, 0, 0
+	case "up":
+		return 0, 0, 1
+	case "down":
+		return 0, 0, -1
+	}
+	return 0, 0, 0
+}

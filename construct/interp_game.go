@@ -108,7 +108,7 @@ func (g *Game) DoLook(args ...string) error {
 
 	// Display the automap if the player has it enabled.
 	if g.p.Flag("automap") {
-		g.p.Buffer("%s\n", room.Map(3))
+		g.p.Buffer("%s\n", g.p.Map(5))
 	} else {
 		g.p.Buffer("\n")
 	}

@@ -205,7 +205,8 @@ func (r *Room) AllPlayers(fn PlayerList) {
 }
 
 // Map generates a map with this room at the center, with the given radius.
-// This is a "fast" implementation with no allocations, for use in look.
+// This is a "fast" implementation with no allocations. This should be used
+// for non-interactive maps, i.e. eagle eye spells, etc.
 func (r *Room) Map(radius int64) string {
 	str := "\n  "
 	startX := r.Data.X - radius
@@ -307,7 +308,7 @@ func (r *Room) IsExitWall(dir string) bool {
 
 func (r *Room) IsExitClosed(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
-		return true
+		return false
 	}
 	exit := r.Data.DirectionExits[dir]
 	if exit.Closed {

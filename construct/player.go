@@ -469,3 +469,67 @@ func setOrModify(base int64, value int64, relative bool) int64 {
 	}
 	return value
 }
+
+// Map generates a map from the player's point of view, taking into account
+// closed doors, hidden rooms, rooms around the corner, etc. This is a slightly
+// more expensive map method that walks exits instead of coordinates, but offers
+// a much more accurate view.
+func (p *Player) Map(radius int64) string {
+	var output string
+	str := make([][]string, (radius*2)+2)
+	for y := range str {
+		str[y] = make([]string, (radius*2)+2)
+		for x := range str[y] {
+			str[y][x] = " "
+		}
+	}
+
+	walked := make(map[string]bool)
+	rooms := make(chan roomWalk, radius*20)
+	rooms <- roomWalk{p.inRoom, radius, radius}
+L:
+	for {
+		select {
+		case room := <-rooms:
+			if room.mx > (radius+4) || room.my > (radius+4) || room.mx <= 0 || room.my <= 0 {
+				continue
+			}
+			for _, dir := range exitDirections {
+				if room.room.CanExit(dir) {
+					nextRoom := room.room.LinkedRoom(dir)
+					if _, ok := walked[nextRoom.Data.UUID]; ok {
+						continue
+					}
+					walked[nextRoom.Data.UUID] = true
+					x, y, _ := getRelativeDir(dir)
+					str[room.my-y][room.mx+x] = "#"
+					rooms <- roomWalk{nextRoom, room.mx + x, room.my - y}
+				}
+			}
+		default:
+			close(rooms)
+			break L
+		}
+	}
+
+	str[radius][radius] = "{R*{x"
+	for row := range str {
+		output += "  " + strings.Join(str[row], "") + "\n"
+	}
+	return output
+}
+
+type roomWalk struct {
+	room *Room
+	mx   int64
+	my   int64
+}
+
+/*
+x
+x
+x
+x
+x
+x x x x x * x x x x x
+*/
