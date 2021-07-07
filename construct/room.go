@@ -51,7 +51,8 @@ type RoomData struct {
 
 // Room is the top level struct for a room.
 type Room struct {
-	Data        *RoomData
+	Data *RoomData
+	// TODO: Add Direction target pointers to room on load and dig
 	players     map[string]*Player
 	playerMutex *sync.RWMutex
 	exitsMutex  *sync.RWMutex
