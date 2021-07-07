@@ -236,6 +236,34 @@ func (r *Room) Map(radius int64) string {
 	return str
 }
 
+// WalledMap will generate a map of the area around this room, with walls denoting
+// the barriers between rooms.
+func (r *Room) WalledMap(radius int64) string {
+	gameMap := path.NewMap(radius)
+	startX := r.Data.X - radius
+	startY := r.Data.Y + radius
+	z := r.Data.Z
+
+	var my int64 = 0
+	for y := startY; y > r.Data.Y-radius; y-- {
+		var mx int64 = 0
+		for x := startX; x < r.Data.X+radius; x++ {
+			mroom := GetRoom(x, y, z)
+			fmt.Printf("getting cell at %d %d %d\n", mx, my, z)
+			cell := gameMap.Cell(mx, my, z)
+			switch {
+			case mroom == nil:
+				cell.Empty = true
+			default:
+				mroom.pathAround(cell)
+			}
+			mx++
+		}
+		my++
+	}
+	return gameMap.DrawMap(r.Data.Z)
+}
+
 // GeneratePath will generate a path to the target room. Use the path to navigate to the
 // given room. This is a heavy implementation and should only be used when a path
 // to a room is needed, i.e. hunting another player, mob, or object.
