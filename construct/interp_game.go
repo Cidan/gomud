@@ -98,11 +98,16 @@ func (g *Game) DoLook(args ...string) error {
 	g.p.Buffer("\n\n%s\n", room.GetName())
 
 	// Display exits.
+	var exitFound bool
 	g.p.Buffer("{c[Exits:")
 	for _, dir := range exitDirections {
 		if g.p.CanExit(dir) {
 			g.p.Buffer(" %s", dir)
+			exitFound = true
 		}
+	}
+	if !exitFound {
+		g.p.Buffer(" none")
 	}
 	g.p.Buffer("]{x\n")
 

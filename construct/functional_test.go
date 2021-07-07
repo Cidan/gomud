@@ -76,7 +76,7 @@ var testCases = []testCase{
 	{
 		"First Look",
 		[]string{},
-		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
+		[]string{"\n\nThe Alpha\n{c[Exits: none]{x\n\n  It all starts here.\n"},
 	},
 
 	// Begin post game test cases -- add loaded world/player cases below this line.
@@ -94,7 +94,7 @@ var testCases = []testCase{
 	{
 		"Dig North",
 		[]string{"dig north"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: south]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig South Already Exists",
@@ -104,32 +104,32 @@ var testCases = []testCase{
 	{
 		"Dig West",
 		[]string{"dig west"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: east]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig South",
 		[]string{"dig south"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: north]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig Up",
 		[]string{"dig up"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: down]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig East",
 		[]string{"dig east"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: west]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig East Again",
 		[]string{"dig east"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: west]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig Down",
 		[]string{"dig down"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: up]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Dig Nonsense",
@@ -170,17 +170,17 @@ var testCases = []testCase{
 	{
 		"Go West",
 		[]string{"west"},
-		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
+		[]string{"You can't go that way!"},
 	},
 	{
 		"Go Up",
 		[]string{"up"},
-		[]string{"\n\nNew Room\n\n  This is a new room, with a new description.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: west down]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Go Down",
 		[]string{"down"},
-		[]string{"\n\nThe Alpha\n\n  It all starts here.\n"},
+		[]string{"\n\nNew Room\n{c[Exits: up]{x\n\n  This is a new room, with a new description.\n"},
 	},
 	{
 		"Nonsense Command",
