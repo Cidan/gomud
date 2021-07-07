@@ -67,6 +67,12 @@ type playerStats struct {
 	MaxMove   int64
 }
 
+type roomWalk struct {
+	room *Room
+	mx   int64
+	my   int64
+}
+
 // NewPlayer constructs a new player
 func NewPlayer() *Player {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -518,18 +524,3 @@ L:
 	}
 	return output
 }
-
-type roomWalk struct {
-	room *Room
-	mx   int64
-	my   int64
-}
-
-/*
-x
-x
-x
-x
-x
-x x x x x * x x x x x
-*/
