@@ -28,6 +28,8 @@ var inverseDirections = map[string]string{
 // walls, or portals.
 type RoomExit struct {
 	Direction string
+	Name      string
+	Door      bool
 	Closed    bool
 	Locked    bool
 	Wall      bool
