@@ -484,9 +484,9 @@ func (p *Player) Map(radius int64) string {
 	var output string
 
 	// Create the map array that stores map runes.
-	str := make([][]string, (radius*2)+2)
+	str := make([][]string, (radius*2)+1)
 	for y := range str {
-		str[y] = make([]string, (radius*2)+2)
+		str[y] = make([]string, (radius*2)+1)
 		for x := range str[y] {
 			str[y][x] = " "
 		}
@@ -508,11 +508,16 @@ L:
 			// Skip this room if it's out of bounds, which prevents infinite map generation. Note
 			// that for the map, 0,0 is the top left -- it should never go below 0, nor should
 			// it be larger than the radius + offset.
-			if room.mx > (radius+4) || room.my > (radius+4) || room.mx <= 0 || room.my <= 0 {
+			if room.mx > ((radius*2)-1) || room.my > ((radius*2)-1) || room.mx <= 0 || room.my <= 0 {
 				continue
 			}
 			// Scan each direction for the current room.
 			for _, dir := range exitDirections {
+				// Maps are 2D, skip up and down.
+				if dir == "up" || dir == "down" {
+					continue
+				}
+
 				if room.room.CanExit(dir) {
 					// There is an exit in this direction, get the room reference by that direction.
 					nextRoom := room.room.LinkedRoom(dir)
@@ -545,7 +550,10 @@ L:
 
 	// Assemble our output string and return it.
 	for row := range str {
-		output += "  " + strings.Join(str[row], "") + "\n"
+		output += "  " + strings.Join(str[row], "")
+		if len(str) != row+1 {
+			output += "\n"
+		}
 	}
 
 	return output

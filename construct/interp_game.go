@@ -108,7 +108,7 @@ func (g *Game) DoLook(args ...string) error {
 
 	// Display the automap if the player has it enabled.
 	if g.p.Flag("automap") {
-		g.p.Buffer("%s\n", g.p.Map(5))
+		g.p.Buffer("\n%s\n\n", g.p.Map(5))
 	} else {
 		g.p.Buffer("\n")
 	}
@@ -282,6 +282,6 @@ func (g *Game) DoMap(args ...string) error {
 	if radius > 3 || radius == 0 {
 		radius = int64(3)
 	}
-	g.p.Write(g.p.GetRoom().Map(radius))
+	g.p.Write(p.Map(radius))
 	return nil
 }
