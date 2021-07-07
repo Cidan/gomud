@@ -71,8 +71,8 @@ func (b *BuildInterp) doDigDir(dir string) error {
 			continue
 		}
 		room.Data.DirectionExits[exitDir].Wall = true
-		currentRoom.Data.DirectionExits[dir].Wall = false
 	}
+	currentRoom.Data.DirectionExits[dir].Wall = false
 
 	if err := room.Save(); err != nil {
 		return err
