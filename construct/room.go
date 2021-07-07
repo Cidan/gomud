@@ -249,7 +249,6 @@ func (r *Room) WalledMap(radius int64) string {
 		var mx int64 = 0
 		for x := startX; x < r.Data.X+radius; x++ {
 			mroom := GetRoom(x, y, z)
-			fmt.Printf("getting cell at %d %d %d\n", mx, my, z)
 			cell := gameMap.Cell(mx, my, z)
 			switch {
 			case mroom == nil:
