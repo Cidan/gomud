@@ -33,6 +33,7 @@ type RoomExit struct {
 	Closed    bool
 	Locked    bool
 	Wall      bool
+	Target    string
 }
 
 // RoomData struct for a room. This data is saved to durable storage when a room is
