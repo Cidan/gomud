@@ -11,6 +11,36 @@ var worldSize int64
 var worldMapMutex sync.RWMutex
 var worldRoomMutex sync.RWMutex
 
+type direction int
+
+const (
+	dirNorth direction = iota
+	dirSouth
+	dirEast
+	dirWest
+	dirUp
+	dirDown
+)
+
+var exitDirections = []direction{dirNorth, dirSouth, dirEast, dirWest, dirUp, dirDown}
+var inverseDirections = map[direction]direction{
+	dirNorth: dirSouth,
+	dirSouth: dirNorth,
+	dirEast:  dirWest,
+	dirWest:  dirEast,
+	dirUp:    dirDown,
+	dirDown:  dirUp,
+}
+
+var dirNames = map[direction]string{
+	dirNorth: "north",
+	dirSouth: "south",
+	dirEast:  "east",
+	dirWest:  "west",
+	dirUp:    "up",
+	dirDown:  "down",
+}
+
 func init() {
 	worldMap = make(map[string]*Room)
 	worldRoomUUID = make(map[string]*Room)
@@ -59,20 +89,24 @@ func WorldSize() int64 {
 	return worldSize
 }
 
-func getRelativeDir(dir string) (x, y, z int64) {
+func getRelativeDir(dir direction) (x, y, z int64) {
 	switch dir {
-	case "north":
+	case dirNorth:
 		return 0, 1, 0
-	case "south":
+	case dirSouth:
 		return 0, -1, 0
-	case "east":
+	case dirEast:
 		return 1, 0, 0
-	case "west":
+	case dirWest:
 		return -1, 0, 0
-	case "up":
+	case dirUp:
 		return 0, 0, 1
-	case "down":
+	case dirDown:
 		return 0, 0, -1
 	}
 	return 0, 0, 0
+}
+
+func dirToName(dir direction) string {
+	return dirNames[dir]
 }

@@ -52,14 +52,14 @@ func (b *BuildInterp) Read(text string) error {
 	return b.p.gameInterp.commands.Process(all[0], all[1:]...)
 }
 
-func (b *BuildInterp) doDigDir(dir string) error {
+func (b *BuildInterp) doDigDir(dir direction) error {
 	currentRoom := b.p.GetRoom()
 	if currentRoom.LinkedRoom(dir) != nil {
-		b.p.Write("There's already a room '%s'.\n", dir)
+		b.p.Write("There's already a room '%s'.\n", dirToName(dir))
 		return nil
 	}
 
-	rX, rY, rZ := b.getRelativeDir(dir)
+	rX, rY, rZ := getRelativeDir(dir)
 
 	room := NewRoom()
 	room.Data.X = currentRoom.Data.X + rX
@@ -91,24 +91,6 @@ func (b *BuildInterp) doDigDir(dir string) error {
 	return nil
 }
 
-func (b *BuildInterp) getRelativeDir(dir string) (x, y, z int64) {
-	switch dir {
-	case "north":
-		return 0, 1, 0
-	case "south":
-		return 0, -1, 0
-	case "east":
-		return 1, 0, 0
-	case "west":
-		return -1, 0, 0
-	case "up":
-		return 0, 0, 1
-	case "down":
-		return 0, 0, -1
-	}
-	return 0, 0, 0
-}
-
 // DoDig will create a new room in the direction the player specifies.
 func (b *BuildInterp) DoDig(args ...string) error {
 	if len(args) == 0 || args[0] == "" {
@@ -117,17 +99,17 @@ func (b *BuildInterp) DoDig(args ...string) error {
 	}
 	switch args[0] {
 	case "north", "n":
-		return b.doDigDir("north")
+		return b.doDigDir(dirNorth)
 	case "east", "e":
-		return b.doDigDir("east")
+		return b.doDigDir(dirEast)
 	case "south", "s":
-		return b.doDigDir("south")
+		return b.doDigDir(dirSouth)
 	case "west", "w":
-		return b.doDigDir("west")
+		return b.doDigDir(dirWest)
 	case "up", "u":
-		return b.doDigDir("up")
+		return b.doDigDir(dirUp)
 	case "down", "d":
-		return b.doDigDir("down")
+		return b.doDigDir(dirDown)
 	default:
 		b.p.Write("That's not a valid direction to dig in.")
 		return nil

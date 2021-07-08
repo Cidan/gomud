@@ -102,7 +102,7 @@ func (g *Game) DoLook(args ...string) error {
 	g.p.Buffer("{c[Exits:")
 	for _, dir := range exitDirections {
 		if g.p.CanExit(dir) {
-			g.p.Buffer(" %s", dir)
+			g.p.Buffer(" %s", dirToName(dir))
 			exitFound = true
 		}
 	}
@@ -158,7 +158,7 @@ func (g *Game) DoBuild(args ...string) error {
 }
 
 // doDir for moving a player in a direction or through a portal.
-func (g *Game) doDir(dir string) {
+func (g *Game) doDir(dir direction) {
 	room := g.p.GetRoom()
 
 	if g.p.CanExit(dir) {
@@ -169,7 +169,7 @@ func (g *Game) doDir(dir string) {
 	}
 
 	if room.IsExitClosed(dir) {
-		g.p.Write("The exit %s is closed!", dir)
+		g.p.Write("The exit %s is closed!", dirToName(dir))
 		return
 	}
 
@@ -179,37 +179,37 @@ func (g *Game) doDir(dir string) {
 
 // DoNorth moves the player north.
 func (g *Game) DoNorth(args ...string) error {
-	g.doDir("north")
+	g.doDir(dirNorth)
 	return nil
 }
 
 // DoEast moves the player east.
 func (g *Game) DoEast(args ...string) error {
-	g.doDir("east")
+	g.doDir(dirEast)
 	return nil
 }
 
 // DoSouth moves the player south.
 func (g *Game) DoSouth(args ...string) error {
-	g.doDir("south")
+	g.doDir(dirSouth)
 	return nil
 }
 
 // DoWest moves the player west.
 func (g *Game) DoWest(args ...string) error {
-	g.doDir("west")
+	g.doDir(dirWest)
 	return nil
 }
 
 // DoUp moves the player up.
 func (g *Game) DoUp(args ...string) error {
-	g.doDir("up")
+	g.doDir(dirUp)
 	return nil
 }
 
 // DoDown moves the player down.
 func (g *Game) DoDown(args ...string) error {
-	g.doDir("down")
+	g.doDir(dirDown)
 	return nil
 }
 

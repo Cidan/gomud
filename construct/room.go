@@ -14,7 +14,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var exitDirections = []string{"north", "south", "east", "west", "up", "down"}
+//var exitDirections = []string{"north", "south", "east", "west", "up", "down"}
+/*
 var inverseDirections = map[string]string{
 	"north": "south",
 	"south": "north",
@@ -23,6 +24,7 @@ var inverseDirections = map[string]string{
 	"up":    "down",
 	"down":  "up",
 }
+*/
 
 // RoomExit is an exit to a room. Exits decide state, such as open/closed doors,
 // walls, or portals.
@@ -158,19 +160,19 @@ func (r *Room) Save() error {
 
 // LinkedRoom returns a room to which this room can traverse to using
 // a direction or portal, given the direction/portal name
-func (r *Room) LinkedRoom(dir string) *Room {
+func (r *Room) LinkedRoom(dir direction) *Room {
 	switch dir {
-	case "north":
+	case dirNorth:
 		return GetRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
-	case "east":
+	case dirEast:
 		return GetRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
-	case "south":
+	case dirSouth:
 		return GetRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
-	case "west":
+	case dirWest:
 		return GetRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
-	case "up":
+	case dirUp:
 		return GetRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
-	case "down":
+	case dirDown:
 		return GetRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
 	}
 	return nil
@@ -299,75 +301,60 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 }
 
 // Exit returns an exit for a given direction.
-func (r *Room) Exit(dir string) *RoomExit {
-	switch dir {
-	case "north":
-		return r.Data.DirectionExits[0]
-	case "south":
-		return r.Data.DirectionExits[1]
-	case "east":
-		return r.Data.DirectionExits[2]
-	case "west":
-		return r.Data.DirectionExits[3]
-	case "up":
-		return r.Data.DirectionExits[4]
-	case "down":
-		return r.Data.DirectionExits[5]
-	default:
-		return nil
-	}
+func (r *Room) Exit(dir direction) *RoomExit {
+	return r.Data.DirectionExits[dir]
 }
 
 func (r *Room) pathAround(cell *path.Cell) {
-	if !r.CanExit("north") {
+	if !r.CanExit(dirNorth) {
 		cell.Exit("north").Wall = true
 	}
-	if !r.CanExit("south") {
+	if !r.CanExit(dirSouth) {
 		cell.Exit("south").Wall = true
 	}
-	if !r.CanExit("east") {
+	if !r.CanExit(dirEast) {
 		cell.Exit("east").Wall = true
 	}
-	if !r.CanExit("west") {
+	if !r.CanExit(dirWest) {
 		cell.Exit("west").Wall = true
 	}
-	if !r.CanExit("up") {
+	if !r.CanExit(dirUp) {
 		cell.Exit("up").Wall = true
 	}
-	if !r.CanExit("down") {
+	if !r.CanExit(dirDown) {
 		cell.Exit("down").Wall = true
 	}
 }
 
-func (r *Room) IsExit(dir string) bool {
+func (r *Room) IsExit(dir direction) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
 	return true
 }
 
-func (r *Room) IsExitWall(dir string) bool {
+func (r *Room) IsExitWall(dir direction) bool {
 	if r.LinkedRoom(dir) == nil {
 		return true
 	}
 	return r.Exit(dir).Wall
 }
 
-func (r *Room) IsExitClosed(dir string) bool {
+func (r *Room) IsExitClosed(dir direction) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
 	return r.Exit(dir).Closed
 }
 
-func (r *Room) IsExitDoor(dir string) bool {
+func (r *Room) IsExitDoor(dir direction) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
 	return r.Exit(dir).Door
 }
 
-func (r *Room) CanExit(dir string) bool {
+func (r *Room) CanExit(dir direction) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}

@@ -464,7 +464,7 @@ func (p *Player) PlayerDescription() string {
 	return fmt.Sprintf("%s is here.", p.GetName())
 }
 
-func (p *Player) CanExit(dir string) bool {
+func (p *Player) CanExit(dir direction) bool {
 	room := p.inRoom
 	return room.CanExit(dir)
 }
@@ -514,7 +514,7 @@ L:
 			// Scan each direction for the current room.
 			for _, dir := range exitDirections {
 				// Maps are 2D, skip up and down.
-				if dir == "up" || dir == "down" {
+				if dir == dirUp || dir == dirDown {
 					continue
 				}
 
