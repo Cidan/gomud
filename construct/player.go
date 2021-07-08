@@ -40,7 +40,6 @@ type Player struct {
 	flagMutex     *sync.RWMutex
 	ctx           context.Context
 	cancel        context.CancelFunc
-	stopReading   bool
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -125,19 +124,13 @@ func (p *Player) playerTick() {
 func (p *Player) SetConnection(c net.Conn) {
 	p.connection = c
 	s := bufio.NewScanner(c)
-	p.stopReading = false
 	//r := bufio.NewReader(c)
 	// Wrap our reader in a channel so that we can select it
 	// in the interp loop. When the connection is closed by p.Stop(),
 	// this loop will break.
 	go func(s *bufio.Scanner) {
 		for {
-			fmt.Printf("Starting the scan loop\n")
 			if !s.Scan() {
-				fmt.Printf("breaking the scan loop.\n")
-				break
-			}
-			if p.stopReading {
 				break
 			}
 			p.input <- s.Text()
