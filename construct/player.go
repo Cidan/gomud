@@ -57,6 +57,7 @@ type playerData struct {
 	Stats    *playerStats
 }
 
+// TODO(lobato): use consts instead of strings.
 type playerStats struct {
 	Health    int64
 	Mana      int64
