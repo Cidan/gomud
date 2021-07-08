@@ -1,8 +1,13 @@
 package construct
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/Cidan/gomud/state"
 )
+
+var RegexValidName = regexp.MustCompile(`^[a-zA-Z']+$`).MatchString
 
 // Login interp for handling user login
 type Login struct {
@@ -45,11 +50,31 @@ func (l *Login) Read(text string) error {
 	return l.state.Process(text)
 }
 
+// ValidateName validates a name input and ensures users have valid names.
+func (l *Login) ValidateName(name string) bool {
+	if len(name) > 16 {
+		return false
+	}
+
+	if !RegexValidName(name) {
+		return false
+	}
+
+	if strings.Count(name, `'`) > 1 {
+		return false
+	}
+	return true
+}
+
 // AskName step.
 func (l *Login) AskName(text string) error {
 	// Check for save
-	// TODO: Validate name
-	// TODO: this is extremely unsafe.
+	if !l.ValidateName(text) {
+		l.p.Write("That is an invalid name. Your name may contain only a-zA-Z and a single apostophe, and must be less than 16 letters long.\n")
+		l.p.Write("So then, what's your name?")
+		return nil
+	}
+
 	l.p.SetName(text)
 	loaded, err := l.p.Load()
 	if err == nil && !loaded {
@@ -57,8 +82,9 @@ func (l *Login) AskName(text string) error {
 		return l.state.SetState("CONFIRM_NAME")
 	}
 	if err != nil {
-		l.p.Write("Something went wrong trying to load your pfile.")
+		l.p.Write("Something went wrong trying to load your pfile, contact an admin.")
 		l.p.Stop()
+		return err
 	}
 	l.p.Write("Password: ")
 	return l.state.SetState("ASK_PASSWORD")

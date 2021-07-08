@@ -17,7 +17,6 @@ import (
 	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
 	"github.com/rs/zerolog/log"
-
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -109,13 +108,13 @@ func (p *Player) setDefaults() {
 // effects such as combat actions, damage dealt, status effects, and other
 // things the player should do/have happen to them over time.
 func (p *Player) playerTick() {
-	ticker := time.NewTicker(time.Second)
+	secondTicker := time.NewTicker(time.Second)
 	for {
 		select {
-		case <-ticker.C:
+		case <-secondTicker.C:
 			break
 		case <-p.ctx.Done():
-			ticker.Stop()
+			secondTicker.Stop()
 			return
 		}
 	}
@@ -185,7 +184,7 @@ func (p *Player) Flush() {
 		p.textBuffer = color.Strip(p.textBuffer)
 	}
 
-	fmt.Fprintf(p.connection, "%s\r", p.textBuffer)
+	fmt.Fprintf(p.connection, "%s\r\xff\xf9", p.textBuffer)
 	p.WritePrompt()
 	p.textBuffer = ""
 }
@@ -199,7 +198,7 @@ func (p *Player) Write(text string, args ...interface{}) {
 		str = color.Strip(str)
 	}
 
-	fmt.Fprintf(p.connection, "%s\r", str)
+	fmt.Fprintf(p.connection, "%s\r\xff\xf9", str)
 	p.WritePrompt()
 }
 
@@ -212,18 +211,19 @@ func (p *Player) WritePrompt() {
 		str = color.Strip(str)
 	}
 	if p.ShowPrompt() {
-		fmt.Fprintf(p.connection, "\n\n%s\r", str)
+		fmt.Fprintf(p.connection, "\n\n%s\r\xff\xf9", str)
 	}
 }
 
 // Save a player to disk
-// TODO: just /tmp for now
 func (p *Player) Save() error {
 	data, err := json.Marshal(p.Data)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), p.Data.Name), data, 0644)
+
+	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName()))
+	err = ioutil.WriteFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), fname), data, 0644)
 	if err != nil {
 		return err
 	}
@@ -232,8 +232,8 @@ func (p *Player) Save() error {
 
 // Load a player from source. Returns true if player was loaded.
 func (p *Player) Load() (bool, error) {
-	// TODO: This is absurdly unsafe. Fix this.
-	data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), p.Data.Name))
+	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName()))
+	data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), fname))
 	// TODO: Make this more robust, need to know if error is because of file
 	// not found, or error reading.
 	if err != nil {
