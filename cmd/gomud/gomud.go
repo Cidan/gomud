@@ -17,7 +17,7 @@ func main() {
 	}
 
 	if construct.WorldSize() == 0 {
-		makeDefaultRoomSet()
+		construct.MakeDefaultRoomSet()
 	}
 
 	server := server.New()
@@ -35,28 +35,4 @@ func startDebugServer() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func makeDefaultRoomSet() {
-	room := construct.NewRoom()
-	room.SetName("The Alpha")
-	room.SetDescription("It all starts here.")
-	room.SetCoordinates(0, 0, 0)
-
-	err := room.Save()
-	if err != nil {
-		panic(err)
-	}
-	construct.AddRoom(room)
-
-	room = construct.NewRoom()
-	room.SetName("The Omega")
-	room.SetDescription("It all ends here.")
-	room.SetCoordinates(1, 0, 0)
-
-	err = room.Save()
-	if err != nil {
-		panic(err)
-	}
-	construct.AddRoom(room)
 }

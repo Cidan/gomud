@@ -53,7 +53,8 @@ type RoomData struct {
 
 // Room is the top level struct for a room.
 type Room struct {
-	Data *RoomData
+	Data      *RoomData
+	exitRooms []*Room
 	// TODO: Add Direction target pointers to room on load and dig
 	players     map[string]*Player
 	playerMutex *sync.RWMutex
@@ -87,6 +88,18 @@ func LoadRooms() error {
 			return err
 		}
 	}
+
+	// Loop through all rooms and link their exits in memory. Somewhat expensive
+	// in large worlds, but only needs to be done once. This allows for fast room
+	// movement without global lookups.
+	for _, room := range worldMap {
+		for _, dir := range exitDirections {
+			exit := room.Exit(dir)
+			if exit.Target != "" {
+				room.exitRooms[dir] = GetRoomByUUID(exit.Target)
+			}
+		}
+	}
 	return nil
 }
 
@@ -107,6 +120,7 @@ func NewRoom() *Room {
 			DirectionExits: exits,
 			OtherExits:     make(map[string]*RoomExit),
 		},
+		exitRooms:   make([]*Room, 6),
 		players:     make(map[string]*Player),
 		playerMutex: new(sync.RWMutex),
 		exitsMutex:  new(sync.RWMutex),
@@ -161,21 +175,7 @@ func (r *Room) Save() error {
 // LinkedRoom returns a room to which this room can traverse to using
 // a direction or portal, given the direction/portal name
 func (r *Room) LinkedRoom(dir direction) *Room {
-	switch dir {
-	case dirNorth:
-		return GetRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
-	case dirEast:
-		return GetRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
-	case dirSouth:
-		return GetRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
-	case dirWest:
-		return GetRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
-	case dirUp:
-		return GetRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
-	case dirDown:
-		return GetRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
-	}
-	return nil
+	return r.exitRooms[dir]
 }
 
 // AddPlayer adds a player to a room.
@@ -298,6 +298,12 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 		}
 	}
 	return gameMap.Path(nil, nil)
+}
+
+// Set an exit room for this direction.
+func (r *Room) SetExitRoom(dir direction, target *Room) {
+	r.Exit(dir).Target = target.Data.UUID
+	r.exitRooms[dir] = target
 }
 
 // Exit returns an exit for a given direction.
