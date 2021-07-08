@@ -161,7 +161,7 @@ func (p *Player) Start() {
 			if p.connection != nil {
 				p.connection.Close()
 			}
-			RemovePlayer(p)
+			Atlas.RemovePlayer(p)
 			return
 		case str := <-p.input:
 			str = strings.TrimSpace(str)
@@ -544,7 +544,7 @@ L:
 					walked[nextRoom.Data.UUID] = true
 
 					// Get the relative translation for the direction.
-					x, y, _ := getRelativeDir(dir)
+					x, y, _ := Atlas.getRelativeDir(dir)
 
 					// Mark the exit room on the map.
 					str[room.my-y][room.mx+x] = "#"

@@ -5,113 +5,89 @@ import (
 	"sync"
 )
 
-var worldMap map[string]*Room
-var worldRoomUUID map[string]*Room
-var allPlayers map[string]*Player
-var worldSize int64
-var worldMapMutex sync.RWMutex
-var worldRoomMutex sync.RWMutex
-var allPlayersMutex sync.RWMutex
-
-type direction int
-
-const (
-	dirNorth direction = iota
-	dirSouth
-	dirEast
-	dirWest
-	dirUp
-	dirDown
-)
-
-var exitDirections = []direction{dirNorth, dirSouth, dirEast, dirWest, dirUp, dirDown}
-var inverseDirections = map[direction]direction{
-	dirNorth: dirSouth,
-	dirSouth: dirNorth,
-	dirEast:  dirWest,
-	dirWest:  dirEast,
-	dirUp:    dirDown,
-	dirDown:  dirUp,
+type AtlasData struct {
+	worldMap        map[string]*Room
+	worldRoomUUID   map[string]*Room
+	allPlayers      map[string]*Player
+	worldSize       int64
+	worldMapMutex   sync.RWMutex
+	worldRoomMutex  sync.RWMutex
+	allPlayersMutex sync.RWMutex
 }
 
-var dirNames = map[direction]string{
-	dirNorth: "north",
-	dirSouth: "south",
-	dirEast:  "east",
-	dirWest:  "west",
-	dirUp:    "up",
-	dirDown:  "down",
-}
+var Atlas *AtlasData
 
 func init() {
-	worldMap = make(map[string]*Room)
-	worldRoomUUID = make(map[string]*Room)
-	allPlayers = make(map[string]*Player)
-	worldMapMutex = sync.RWMutex{}
-	worldRoomMutex = sync.RWMutex{}
-	allPlayersMutex = sync.RWMutex{}
+	Atlas = &AtlasData{
+		worldMap:        make(map[string]*Room),
+		worldRoomUUID:   make(map[string]*Room),
+		allPlayers:      make(map[string]*Player),
+		worldMapMutex:   sync.RWMutex{},
+		worldRoomMutex:  sync.RWMutex{},
+		allPlayersMutex: sync.RWMutex{},
+	}
 }
 
-func genRoomIndex(X, Y, Z int64) string {
+func (a *AtlasData) genRoomIndex(X, Y, Z int64) string {
 	return fmt.Sprintf("%d,%d,%d", X, Y, Z)
 }
 
 // GetRoom returns a pointer to a room at the given coordinates.
-func GetRoom(X, Y, Z int64) *Room {
-	worldMapMutex.RLock()
-	defer worldMapMutex.RUnlock()
-	if room, ok := worldMap[genRoomIndex(X, Y, Z)]; ok {
+func (a *AtlasData) GetRoom(X, Y, Z int64) *Room {
+	a.worldMapMutex.RLock()
+	defer a.worldMapMutex.RUnlock()
+	if room, ok := a.worldMap[a.genRoomIndex(X, Y, Z)]; ok {
 		return room
 	}
 	return nil
 }
 
 // GetRoomByUUID returns a pointer to a room via the room UUID.
-func GetRoomByUUID(uuid string) *Room {
-	worldRoomMutex.RLock()
-	defer worldRoomMutex.RUnlock()
-	if room, ok := worldRoomUUID[uuid]; ok {
+func (a *AtlasData) GetRoomByUUID(uuid string) *Room {
+	a.worldRoomMutex.RLock()
+	defer a.worldRoomMutex.RUnlock()
+	if room, ok := a.worldRoomUUID[uuid]; ok {
 		return room
 	}
 	return nil
 }
 
 // AddRoom instatiates a room into the game world.
-func AddRoom(r *Room) {
-	worldMapMutex.Lock()
-	worldMap[r.GetIndex()] = r
-	worldMapMutex.Unlock()
+func (a *AtlasData) AddRoom(r *Room) {
+	a.worldMapMutex.Lock()
+	a.worldMap[r.GetIndex()] = r
+	a.worldMapMutex.Unlock()
 
-	worldRoomMutex.Lock()
-	worldRoomUUID[r.Data.UUID] = r
-	worldSize++
-	worldRoomMutex.Unlock()
+	a.worldRoomMutex.Lock()
+	a.worldRoomUUID[r.Data.UUID] = r
+	a.worldSize++
+	a.worldRoomMutex.Unlock()
 }
 
 // AddPlayer adds a player to the global game state. Returns existing
 // player reference if the player already exists globally.
-func AddPlayer(p *Player) *Player {
-	allPlayersMutex.Lock()
-	defer allPlayersMutex.Unlock()
-	if existingPlayer, ok := allPlayers[p.GetName()]; ok {
+func (a *AtlasData) AddPlayer(p *Player) *Player {
+	a.allPlayersMutex.Lock()
+	defer a.allPlayersMutex.Unlock()
+	if existingPlayer, ok := a.allPlayers[p.GetName()]; ok {
 		return existingPlayer
 	}
-	allPlayers[p.GetName()] = p
+	a.allPlayers[p.GetName()] = p
 	return nil
 }
 
-func RemovePlayer(p *Player) {
-	allPlayersMutex.Lock()
-	defer allPlayersMutex.Unlock()
-	delete(allPlayers, p.GetName())
+func (a *AtlasData) RemovePlayer(p *Player) {
+	a.allPlayersMutex.Lock()
+	defer a.allPlayersMutex.Unlock()
+	delete(a.allPlayers, p.GetName())
 }
 
 // WorldSize returns the number of rooms in the world.
-func WorldSize() int64 {
-	return worldSize
+func (a *AtlasData) WorldSize() int64 {
+	return a.worldSize
 }
 
-func getRelativeDir(dir direction) (x, y, z int64) {
+func (a *AtlasData) getRelativeDir(dir direction) (x, y, z int64) {
 	switch dir {
 	case dirNorth:
 		return 0, 1, 0
@@ -129,11 +105,11 @@ func getRelativeDir(dir direction) (x, y, z int64) {
 	return 0, 0, 0
 }
 
-func dirToName(dir direction) string {
+func (a *AtlasData) dirToName(dir direction) string {
 	return dirNames[dir]
 }
 
-func MakeDefaultRoomSet() {
+func (a *AtlasData) MakeDefaultRoomSet() {
 	room := NewRoom()
 	room.SetName("The Alpha")
 	room.SetDescription("It all starts here.")
@@ -146,5 +122,5 @@ func MakeDefaultRoomSet() {
 	if err != nil {
 		panic(err)
 	}
-	AddRoom(room)
+	a.AddRoom(room)
 }

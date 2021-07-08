@@ -98,7 +98,7 @@ func (l *Login) AskPassword(text string) error {
 		l.p.Stop()
 		return nil
 	}
-	if existingPlayer := AddPlayer(l.p); existingPlayer != nil {
+	if existingPlayer := Atlas.AddPlayer(l.p); existingPlayer != nil {
 		l.p.Write("An existing player was found, disconnecting that player and attaching you to that session.")
 		existingPlayer.Disconnect()
 		// Quick hack to break the current connection input scanner, which will return
@@ -117,10 +117,10 @@ func (l *Login) AskPassword(text string) error {
 	}
 
 	l.p.Write("Entering the world!")
-	if target := GetRoomByUUID(l.p.Data.Room); target != nil {
+	if target := Atlas.GetRoomByUUID(l.p.Data.Room); target != nil {
 		l.p.ToRoom(target)
 	} else {
-		l.p.ToRoom(GetRoom(0, 0, 0))
+		l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
 	}
 
 	l.p.Game()
@@ -156,7 +156,7 @@ func (l *Login) ConfirmPassword(text string) error {
 	}
 	l.p.Write("Entering the world!")
 	l.p.Game()
-	l.p.ToRoom(GetRoom(0, 0, 0))
+	l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil
 }

@@ -16,8 +16,8 @@ func main() {
 		panic(err)
 	}
 
-	if construct.WorldSize() == 0 {
-		construct.MakeDefaultRoomSet()
+	if construct.Atlas.WorldSize() == 0 {
+		construct.Atlas.MakeDefaultRoomSet()
 	}
 
 	server := server.New()

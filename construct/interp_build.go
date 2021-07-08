@@ -55,11 +55,11 @@ func (b *BuildInterp) Read(text string) error {
 func (b *BuildInterp) doDigDir(dir direction) error {
 	currentRoom := b.p.GetRoom()
 	if currentRoom.LinkedRoom(dir) != nil {
-		b.p.Write("There's already a room '%s'.\n", dirToName(dir))
+		b.p.Write("There's already a room '%s'.\n", Atlas.dirToName(dir))
 		return nil
 	}
 
-	rX, rY, rZ := getRelativeDir(dir)
+	rX, rY, rZ := Atlas.getRelativeDir(dir)
 
 	room := NewRoom()
 	room.Data.X = currentRoom.Data.X + rX
@@ -84,7 +84,7 @@ func (b *BuildInterp) doDigDir(dir direction) error {
 		return err
 	}
 
-	AddRoom(room)
+	Atlas.AddRoom(room)
 
 	b.p.ToRoom(room)
 	b.p.Command("look")

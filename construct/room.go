@@ -69,7 +69,7 @@ func LoadRooms() error {
 			return err
 		}
 		log.Debug().Str("name", room.GetName()).Msg("loaded room")
-		AddRoom(room)
+		Atlas.AddRoom(room)
 		// Save the room after load in order to apply any possible migrations.
 		if err := room.Save(); err != nil {
 			return err
@@ -79,11 +79,11 @@ func LoadRooms() error {
 	// Loop through all rooms and link their exits in memory. Somewhat expensive
 	// in large worlds, but only needs to be done once. This allows for fast room
 	// movement without global lookups.
-	for _, room := range worldMap {
+	for _, room := range Atlas.worldMap {
 		for _, dir := range exitDirections {
 			exit := room.Exit(dir)
 			if exit.Target != "" {
-				room.exitRooms[dir] = GetRoomByUUID(exit.Target)
+				room.exitRooms[dir] = Atlas.GetRoomByUUID(exit.Target)
 			}
 		}
 	}
@@ -209,7 +209,7 @@ func (r *Room) Map(radius int64) string {
 	for y := startY; y > r.Data.Y-radius; y-- {
 		var rx int64 = 0
 		for x := startX; x < r.Data.X+radius; x++ {
-			mroom := GetRoom(x, y, z)
+			mroom := Atlas.GetRoom(x, y, z)
 			switch {
 			case mroom == nil:
 				str += " "
@@ -239,7 +239,7 @@ func (r *Room) WalledMap(radius int64) string {
 	for y := startY; y > r.Data.Y-radius; y-- {
 		var mx int64 = 0
 		for x := startX; x < r.Data.X+radius; x++ {
-			mroom := GetRoom(x, y, z)
+			mroom := Atlas.GetRoom(x, y, z)
 			cell := gameMap.Cell(mx, my, z)
 			switch {
 			case mroom == nil:
@@ -273,7 +273,7 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 	for y := startY; y > r.Data.Y-radius; y-- {
 		for x := startX; x < r.Data.X+radius; x++ {
 			for z := startZ; z < r.Data.Z+radius; z++ {
-				mroom := GetRoom(x, y, z)
+				mroom := Atlas.GetRoom(x, y, z)
 				cell := gameMap.Cell(x, y, z)
 				switch {
 				case mroom == nil:
@@ -301,7 +301,7 @@ func (r *Room) Exit(dir direction) *RoomExit {
 func (r *Room) pathAround(cell *path.Cell) {
 	for _, dir := range exitDirections {
 		if !r.CanExit(dir) {
-			cell.Exit(dirToName(dir)).Wall = true
+			cell.Exit(Atlas.dirToName(dir)).Wall = true
 		}
 	}
 }

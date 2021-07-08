@@ -102,7 +102,7 @@ func (g *Game) DoLook(args ...string) error {
 	g.p.Buffer("{c[Exits:")
 	for _, dir := range exitDirections {
 		if g.p.CanExit(dir) {
-			g.p.Buffer(" %s", dirToName(dir))
+			g.p.Buffer(" %s", Atlas.dirToName(dir))
 			exitFound = true
 		}
 	}
@@ -169,7 +169,7 @@ func (g *Game) doDir(dir direction) {
 	}
 
 	if room.IsExitClosed(dir) {
-		g.p.Write("The exit %s is closed!", dirToName(dir))
+		g.p.Write("The exit %s is closed!", Atlas.dirToName(dir))
 		return
 	}
 

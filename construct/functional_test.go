@@ -282,7 +282,7 @@ func makeStartingRoom() {
 	room := NewRoom()
 	room.Data.Name = "The Alpha"
 	room.Data.Description = "It all starts here."
-	AddRoom(room)
+	Atlas.AddRoom(room)
 }
 
 func TestEndToEnd(t *testing.T) {
