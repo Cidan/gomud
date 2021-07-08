@@ -45,7 +45,7 @@ type RoomData struct {
 	X              int64
 	Y              int64
 	Z              int64
-	DirectionExits map[string]*RoomExit
+	DirectionExits []*RoomExit
 	OtherExits     map[string]*RoomExit
 }
 
@@ -92,9 +92,9 @@ func LoadRooms() error {
 func NewRoom() *Room {
 	// The directional exit map should be immutable, never edit
 	// the map it self. Concurrent reads of exits is okay.
-	exits := make(map[string]*RoomExit)
-	for _, dir := range exitDirections {
-		exits[dir] = &RoomExit{}
+	exits := make([]*RoomExit, 6)
+	for n := range exitDirections {
+		exits[n] = new(RoomExit)
 	}
 
 	return &Room{
@@ -298,6 +298,26 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 	return gameMap.Path(nil, nil)
 }
 
+// Exit returns an exit for a given direction.
+func (r *Room) Exit(dir string) *RoomExit {
+	switch dir {
+	case "north":
+		return r.Data.DirectionExits[0]
+	case "south":
+		return r.Data.DirectionExits[1]
+	case "east":
+		return r.Data.DirectionExits[2]
+	case "west":
+		return r.Data.DirectionExits[3]
+	case "up":
+		return r.Data.DirectionExits[4]
+	case "down":
+		return r.Data.DirectionExits[5]
+	default:
+		return nil
+	}
+}
+
 func (r *Room) pathAround(cell *path.Cell) {
 	if !r.CanExit("north") {
 		cell.Exit("north").Wall = true
@@ -330,28 +350,28 @@ func (r *Room) IsExitWall(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return true
 	}
-	return r.Data.DirectionExits[dir].Wall
+	return r.Exit(dir).Wall
 }
 
 func (r *Room) IsExitClosed(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
-	return r.Data.DirectionExits[dir].Closed
+	return r.Exit(dir).Closed
 }
 
 func (r *Room) IsExitDoor(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
-	return r.Data.DirectionExits[dir].Door
+	return r.Exit(dir).Door
 }
 
 func (r *Room) CanExit(dir string) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
-	exit := r.Data.DirectionExits[dir]
+	exit := r.Exit(dir)
 	if exit.Closed || exit.Wall {
 		return false
 	}

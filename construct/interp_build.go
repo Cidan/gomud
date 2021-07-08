@@ -68,13 +68,13 @@ func (b *BuildInterp) doDigDir(dir string) error {
 
 	for _, exitDir := range exitDirections {
 		if inverseDirections[dir] == exitDir {
-			room.Data.DirectionExits[dir].Target = currentRoom.Data.UUID
+			room.Exit(dir).Target = currentRoom.Data.UUID
 			continue
 		}
-		room.Data.DirectionExits[exitDir].Wall = true
+		room.Exit(exitDir).Wall = true
 	}
-	currentRoom.Data.DirectionExits[dir].Wall = false
-	currentRoom.Data.DirectionExits[dir].Target = room.Data.UUID
+	currentRoom.Exit(dir).Wall = false
+	currentRoom.Exit(dir).Target = room.Data.UUID
 
 	if err := room.Save(); err != nil {
 		return err
