@@ -152,7 +152,7 @@ func (g *Game) DoQuit(args ...string) error {
 
 // DoBuild enables build mode for the player.
 func (g *Game) DoBuild(args ...string) error {
-	g.p.Write("Entering build mode\n")
+	g.p.Write("Entering build mode.")
 	g.p.Build()
 	return nil
 }
