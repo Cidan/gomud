@@ -1,5 +1,7 @@
 package construct
 
+import "time"
+
 type direction int
 
 const (
@@ -30,3 +32,5 @@ var dirNames = map[direction]string{
 	dirUp:    "up",
 	dirDown:  "down",
 }
+
+const maxIdleTime = time.Minute * 15

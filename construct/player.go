@@ -28,18 +28,19 @@ func hashPassword(pw string) string {
 
 // Player construct
 type Player struct {
-	connection    net.Conn
-	input         chan string //*bufio.Reader
-	Data          *playerData
-	gameInterp    *Game
-	buildInterp   *BuildInterp
-	loginInterp   *Login
-	currentInterp Interp
-	inRoom        *Room
-	textBuffer    string
-	flagMutex     *sync.RWMutex
-	ctx           context.Context
-	cancel        context.CancelFunc
+	connection     net.Conn
+	input          chan string //*bufio.Reader
+	Data           *playerData
+	gameInterp     *Game
+	buildInterp    *BuildInterp
+	loginInterp    *Login
+	currentInterp  Interp
+	inRoom         *Room
+	textBuffer     string
+	flagMutex      *sync.RWMutex
+	ctx            context.Context
+	cancel         context.CancelFunc
+	lastActionTime time.Time
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -82,10 +83,11 @@ func NewPlayer() *Player {
 			Flags: make(map[string]bool),
 			Stats: &playerStats{},
 		},
-		input:     make(chan string),
-		flagMutex: new(sync.RWMutex),
-		ctx:       ctx,
-		cancel:    cancel,
+		lastActionTime: time.Now(),
+		input:          make(chan string),
+		flagMutex:      new(sync.RWMutex),
+		ctx:            ctx,
+		cancel:         cancel,
 	}
 	p.setDefaults()
 	return p
@@ -110,13 +112,17 @@ func (p *Player) setDefaults() {
 // things the player should do/have happen to them over time.
 func (p *Player) playerTick() {
 	// TODO(lobato): setup idle ticker
+	minuteTicker := time.NewTicker(time.Minute)
 	secondTicker := time.NewTicker(time.Second)
 	for {
 		select {
 		case <-secondTicker.C:
 			break
+		case <-minuteTicker.C:
+			break
 		case <-p.ctx.Done():
 			secondTicker.Stop()
+			minuteTicker.Stop()
 			return
 		}
 	}
@@ -136,6 +142,7 @@ func (p *Player) SetConnection(c net.Conn) {
 				break
 			}
 			p.input <- s.Text()
+			p.lastActionTime = time.Now()
 		}
 	}(s)
 }
