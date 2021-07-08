@@ -160,6 +160,7 @@ func (p *Player) Start() {
 			if p.connection != nil {
 				p.connection.Close()
 			}
+			RemovePlayer(p)
 			return
 		case str := <-p.input:
 			str = strings.TrimSpace(str)
@@ -269,7 +270,6 @@ func (p *Player) Stop() {
 	p.FromRoom()
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.connection.Write([]byte("\n"))
-	RemovePlayer(p)
 	p.cancel()
 }
 
