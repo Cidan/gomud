@@ -3,6 +3,7 @@ package construct
 import (
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Cidan/gomud/state"
 )
@@ -97,8 +98,25 @@ func (l *Login) AskPassword(text string) error {
 		l.p.Stop()
 		return nil
 	}
-	l.p.Write("Entering the world!")
+	if existingPlayer := AddPlayer(l.p); existingPlayer != nil {
+		l.p.Write("An existing player was found, disconnecting that player and attaching you to that session.")
+		existingPlayer.Disconnect()
+		// Quick hack to break the current connection input scanner, which will return
+		// false and break the read loop if a deadline passes.
+		//
+		// Heaven help us if this doesn't complete in less than a millisecond.
+		l.p.connection.SetReadDeadline(time.Now().Add(time.Nanosecond))
+		time.Sleep(time.Millisecond * 1)
+		l.p.connection.SetReadDeadline(time.Time{})
 
+		existingPlayer.SetConnection(l.p.connection)
+		l.p.connection = nil
+		l.p.cancel()
+		existingPlayer.Command("look")
+		return nil
+	}
+
+	l.p.Write("Entering the world!")
 	if target := GetRoomByUUID(l.p.Data.Room); target != nil {
 		l.p.ToRoom(target)
 	} else {

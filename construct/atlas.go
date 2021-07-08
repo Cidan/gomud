@@ -7,9 +7,11 @@ import (
 
 var worldMap map[string]*Room
 var worldRoomUUID map[string]*Room
+var allPlayers map[string]*Player
 var worldSize int64
 var worldMapMutex sync.RWMutex
 var worldRoomMutex sync.RWMutex
+var allPlayersMutex sync.RWMutex
 
 type direction int
 
@@ -44,8 +46,10 @@ var dirNames = map[direction]string{
 func init() {
 	worldMap = make(map[string]*Room)
 	worldRoomUUID = make(map[string]*Room)
+	allPlayers = make(map[string]*Player)
 	worldMapMutex = sync.RWMutex{}
 	worldRoomMutex = sync.RWMutex{}
+	allPlayersMutex = sync.RWMutex{}
 }
 
 func genRoomIndex(X, Y, Z int64) string {
@@ -82,6 +86,24 @@ func AddRoom(r *Room) {
 	worldRoomUUID[r.Data.UUID] = r
 	worldSize++
 	worldRoomMutex.Unlock()
+}
+
+// AddPlayer adds a player to the global game state. Returns existing
+// player reference if the player already exists globally.
+func AddPlayer(p *Player) *Player {
+	allPlayersMutex.Lock()
+	defer allPlayersMutex.Unlock()
+	if existingPlayer, ok := allPlayers[p.GetName()]; ok {
+		return existingPlayer
+	}
+	allPlayers[p.GetName()] = p
+	return nil
+}
+
+func RemovePlayer(p *Player) {
+	allPlayersMutex.Lock()
+	defer allPlayersMutex.Unlock()
+	delete(allPlayers, p.GetName())
 }
 
 // WorldSize returns the number of rooms in the world.

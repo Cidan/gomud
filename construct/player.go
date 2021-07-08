@@ -40,6 +40,7 @@ type Player struct {
 	flagMutex     *sync.RWMutex
 	ctx           context.Context
 	cancel        context.CancelFunc
+	stopReading   bool
 }
 
 // This is the main data construct for a human player. Any new flags, attributes
@@ -123,19 +124,30 @@ func (p *Player) playerTick() {
 // SetConnection sets the player connection object
 func (p *Player) SetConnection(c net.Conn) {
 	p.connection = c
-	r := bufio.NewReader(c)
+	s := bufio.NewScanner(c)
+	p.stopReading = false
+	//r := bufio.NewReader(c)
 	// Wrap our reader in a channel so that we can select it
 	// in the interp loop. When the connection is closed by p.Stop(),
 	// this loop will break.
-	go func(r *bufio.Reader) {
+	go func(s *bufio.Scanner) {
 		for {
-			str, err := r.ReadString('\n')
-			if err != nil {
+			fmt.Printf("Starting the scan loop\n")
+			if !s.Scan() {
+				fmt.Printf("breaking the scan loop.\n")
 				break
 			}
-			p.input <- str
+			if p.stopReading {
+				break
+			}
+			p.input <- s.Text()
 		}
-	}(r)
+	}(s)
+}
+
+// Disconnect this player without unloading them from the world.
+func (p *Player) Disconnect() {
+	p.connection.Close()
 }
 
 // Start this player and their interp loop.
@@ -151,7 +163,9 @@ func (p *Player) Start() {
 		select {
 		case <-p.ctx.Done():
 			log.Info().Str("player", p.Data.UUID).Msg("Player context canceled, closing connection.")
-			p.connection.Close()
+			if p.connection != nil {
+				p.connection.Close()
+			}
 			return
 		case str := <-p.input:
 			str = strings.TrimSpace(str)
@@ -215,6 +229,11 @@ func (p *Player) WritePrompt() {
 	}
 }
 
+// WriteRaw writes raw text to the player with no transforms.
+func (p *Player) WriteRaw(text string, args ...interface{}) {
+	fmt.Fprintf(p.connection, text, args...)
+}
+
 // Save a player to disk
 func (p *Player) Save() error {
 	data, err := json.Marshal(p.Data)
@@ -256,6 +275,7 @@ func (p *Player) Stop() {
 	p.FromRoom()
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.connection.Write([]byte("\n"))
+	RemovePlayer(p)
 	p.cancel()
 }
 
