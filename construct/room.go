@@ -306,23 +306,10 @@ func (r *Room) Exit(dir direction) *RoomExit {
 }
 
 func (r *Room) pathAround(cell *path.Cell) {
-	if !r.CanExit(dirNorth) {
-		cell.Exit("north").Wall = true
-	}
-	if !r.CanExit(dirSouth) {
-		cell.Exit("south").Wall = true
-	}
-	if !r.CanExit(dirEast) {
-		cell.Exit("east").Wall = true
-	}
-	if !r.CanExit(dirWest) {
-		cell.Exit("west").Wall = true
-	}
-	if !r.CanExit(dirUp) {
-		cell.Exit("up").Wall = true
-	}
-	if !r.CanExit(dirDown) {
-		cell.Exit("down").Wall = true
+	for _, dir := range exitDirections {
+		if !r.CanExit(dir) {
+			cell.Exit(dirToName(dir)).Wall = true
+		}
 	}
 }
 
