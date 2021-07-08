@@ -108,6 +108,7 @@ func (p *Player) setDefaults() {
 // effects such as combat actions, damage dealt, status effects, and other
 // things the player should do/have happen to them over time.
 func (p *Player) playerTick() {
+	// TODO(lobato): setup idle ticker
 	secondTicker := time.NewTicker(time.Second)
 	for {
 		select {
