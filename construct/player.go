@@ -326,10 +326,10 @@ func (p *Player) ToRoom(target *Room) bool {
 	if p.inRoom == target {
 		return true
 	}
+
 	// Remove the player from the current room.
-	if p.inRoom != nil {
-		p.inRoom.RemovePlayer(p)
-	}
+	p.FromRoom()
+
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
 	target.AddPlayer(p)
