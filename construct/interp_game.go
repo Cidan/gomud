@@ -288,8 +288,8 @@ func (g *Game) DoMap(args ...string) error {
 			radius = int64(r)
 		}
 	}
-	if radius > 3 || radius == 0 {
-		radius = int64(3)
+	if radius > 100 || radius == 0 {
+		radius = int64(100)
 	}
 	g.p.Write(p.Map(radius))
 	return nil
