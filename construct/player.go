@@ -342,6 +342,11 @@ func (p *Player) ToRoom(target *Room) bool {
 	return true
 }
 
+// GetRoom returns the room the player is currently in.
+func (p *Player) GetRoom() *Room {
+	return p.inRoom
+}
+
 // Command runs a command through the interp for the player.
 func (p *Player) Command(cmd string) error {
 	return p.currentInterp.Read(cmd)
@@ -372,11 +377,6 @@ func (p *Player) IsPassword(password string) bool {
 func (p *Player) SetPassword(password string) {
 	p.Data.Password = hashPassword(password)
 	return
-}
-
-// GetRoom returns the room the player is currently in
-func (p *Player) GetRoom() *Room {
-	return p.inRoom
 }
 
 // SetInterp for a player.
