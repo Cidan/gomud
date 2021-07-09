@@ -33,6 +33,7 @@ type Player struct {
 	Data           *playerData
 	gameInterp     *Game
 	buildInterp    *BuildInterp
+	textInterp     *TextInterp
 	loginInterp    *Login
 	currentInterp  Interp
 	inRoom         *Room
@@ -157,6 +158,7 @@ func (p *Player) Start() {
 	p.buildInterp = NewBuildInterp(p)
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
+	p.textInterp = NewTextInterp(p)
 	p.Login()
 
 	p.Write("Welcome, by what name are you known?")
@@ -165,6 +167,9 @@ func (p *Player) Start() {
 		select {
 		case <-p.ctx.Done():
 			log.Info().Str("player", p.Data.UUID).Msg("Player context canceled, closing connection.")
+			if p.currentInterp == p.textInterp {
+				p.Command(":q")
+			}
 			if p.connection != nil {
 				p.connection.Close()
 			}
@@ -226,9 +231,43 @@ func (p *Player) WritePrompt() {
 	} else {
 		str = color.Strip(str)
 	}
+	if p.currentInterp == p.textInterp {
+		fmt.Fprintf(p.connection, "\n[:w to save, :q to quit]\r\xff\xf9")
+		return
+	}
+	if p.IsBuilding() {
+		p.BuildPrompt()
+		return
+	}
 	if p.ShowPrompt() {
 		fmt.Fprintf(p.connection, "\n\n%s\r\xff\xf9", str)
 	}
+}
+
+// BuildPrompt displays the build prompt
+func (p *Player) BuildPrompt() {
+	room := p.GetRoom()
+	autobuild := ""
+
+	if p.Flag("autobuild") {
+		autobuild = "{R Autobuilding{x"
+	}
+
+	str := fmt.Sprintf(
+		"\n\nBuilding in x:%d,y:%d,z:%d%s >\r\xff\xf9",
+		room.Data.X,
+		room.Data.Y,
+		room.Data.Z,
+		autobuild,
+	)
+
+	if p.Flag("color") {
+		str = color.Parse(str)
+	} else {
+		str = color.Strip(str)
+	}
+
+	fmt.Fprintf(p.connection, str)
 }
 
 // WriteRaw writes raw text to the player with no transforms.
@@ -435,6 +474,14 @@ func (p *Player) ShowPrompt() bool {
 // IsInGame returns true if the player is in the game world, i.e. not logging in/creating.
 func (p *Player) IsInGame() bool {
 	if p.currentInterp == p.gameInterp || p.currentInterp == p.buildInterp {
+		return true
+	}
+	return false
+}
+
+// IsBuilding returns true if the player is in building mode.
+func (p *Player) IsBuilding() bool {
+	if p.currentInterp == p.buildInterp {
 		return true
 	}
 	return false

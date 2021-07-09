@@ -1,6 +1,7 @@
 package construct
 
 import (
+	"context"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -56,6 +57,9 @@ func NewBuildInterp(p *Player) *BuildInterp {
 		name:  "down",
 		alias: []string{"d"},
 		Fn:    b.DoDown,
+	}).Add(&command{
+		name: "edit",
+		Fn:   b.DoEdit,
 	})
 	b.commands = commands
 	return b
@@ -258,4 +262,45 @@ func (b *BuildInterp) setRoom(args ...string) error {
 		return nil
 	}
 
+}
+
+func (b *BuildInterp) DoEdit(args ...string) error {
+	if len(args) == 0 {
+		b.p.Write("What would you like to edit?")
+		return nil
+	}
+	sp := strings.SplitN(args[0], " ", 3)
+	if len(sp) < 2 {
+		b.p.Write("What would you like to edit?")
+		return nil
+	}
+	switch sp[0] {
+	case "room":
+		return b.editRoom(sp[1])
+	}
+	return nil
+}
+
+func (b *BuildInterp) editRoom(field string) error {
+	p := b.p
+	room := p.inRoom
+	var ctx context.Context
+
+	switch field {
+	case "name":
+		ctx = p.textInterp.Start(&room.Data.Name)
+	case "description":
+		ctx = p.textInterp.Start(&room.Data.Description)
+	}
+
+	p.setInterp(p.textInterp)
+	p.Write("You are now editing text. Type :q to quit, :w to save, and :? for help.")
+
+	go func(ctx context.Context, room *Room) {
+		<-ctx.Done()
+		room.Save()
+		p.setInterp(p.buildInterp)
+		p.Command("look")
+	}(ctx, room)
+	return nil
 }
