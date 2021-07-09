@@ -222,7 +222,7 @@ func (g *Game) DoSay(args ...string) error {
 		return nil
 	}
 
-	room := p.inRoom
+	room := p.GetRoom()
 	if room == nil {
 		return fmt.Errorf("player %s not in a valid room", p.GetName())
 	}

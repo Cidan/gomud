@@ -331,9 +331,11 @@ func (p *Player) ToRoom(target *Room) bool {
 		return true
 	}
 
+	room := p.GetRoom()
+
 	// Remove the player from the current room.
-	if p.inRoom != nil {
-		p.inRoom.RemovePlayer(p)
+	if room != nil {
+		room.RemovePlayer(p)
 	}
 
 	p.inRoom = target
@@ -529,7 +531,7 @@ func (p *Player) PlayerDescription() string {
 }
 
 func (p *Player) CanExit(dir direction) bool {
-	room := p.inRoom
+	room := p.GetRoom()
 	return room.CanExit(dir)
 }
 
@@ -562,7 +564,13 @@ func (p *Player) Map(radius int64) string {
 	// Create a rooms channel that contains the rooms we need to walk and insert
 	// the player starting room as the first room, at the center of the map.
 	rooms := make(chan roomWalk, radius*20)
-	rooms <- roomWalk{p.inRoom, radius, radius}
+
+	room := p.GetRoom()
+	if room == nil {
+		return ""
+	}
+
+	rooms <- roomWalk{room, radius, radius}
 
 	// Loop until the channel contains no more entries.
 L:
