@@ -17,6 +17,7 @@ type TextInterp struct {
 	cancel   context.CancelFunc
 	buffer   string
 	field    *string
+	quit     bool
 }
 
 func NewTextInterp(p *Player) *TextInterp {
@@ -40,6 +41,7 @@ func (e *TextInterp) Read(text string) error {
 	if e.commands.Has(all[0]) {
 		return e.commands.Process(all[0], all[1:]...)
 	}
+	e.quit = false
 	e.buffer += text + "\n"
 	e.p.Write(e.buffer)
 	return nil
@@ -51,6 +53,7 @@ func (e *TextInterp) Start(field *string) context.Context {
 	e.context = ctx
 	e.cancel = cancel
 	e.field = field
+	e.quit = false
 	return e.context
 }
 
@@ -69,8 +72,13 @@ func (e *TextInterp) DoDone(args ...string) error {
 }
 
 func (e *TextInterp) DoCancel(args ...string) error {
-	e.field = nil
-	e.p.Write("{RCancelling editing, text not saved.{x")
-	e.cancel()
+	if e.quit {
+		e.field = nil
+		e.p.Write("{RCancelling editing, text not saved.{x")
+		e.cancel()
+	} else {
+		e.p.Write("Type :q to quit again. Any other command will back out.")
+		e.quit = true
+	}
 	return nil
 }
