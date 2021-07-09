@@ -165,6 +165,26 @@ func (r *Room) LinkedRoom(dir direction) *Room {
 	return r.exitRooms[dir]
 }
 
+// PhysicalRoom returns a room which exists physically in the direction
+// given based on the coordinate map.
+func (r *Room) PhysicalRoom(dir direction) *Room {
+	switch dir {
+	case dirNorth:
+		return Atlas.GetRoom(r.Data.X, r.Data.Y+1, r.Data.Z)
+	case dirEast:
+		return Atlas.GetRoom(r.Data.X+1, r.Data.Y, r.Data.Z)
+	case dirSouth:
+		return Atlas.GetRoom(r.Data.X, r.Data.Y-1, r.Data.Z)
+	case dirWest:
+		return Atlas.GetRoom(r.Data.X-1, r.Data.Y, r.Data.Z)
+	case dirUp:
+		return Atlas.GetRoom(r.Data.X, r.Data.Y, r.Data.Z+1)
+	case dirDown:
+		return Atlas.GetRoom(r.Data.X, r.Data.Y, r.Data.Z-1)
+	}
+	return nil
+}
+
 // AddPlayer adds a player to a room.
 func (r *Room) AddPlayer(player *Player) {
 	r.playerMutex.Lock()

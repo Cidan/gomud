@@ -32,6 +32,30 @@ func NewBuildInterp(p *Player) *BuildInterp {
 	}).Add(&command{
 		name: "set",
 		Fn:   b.DoSet,
+	}).Add(&command{
+		name:  "north",
+		alias: []string{"n"},
+		Fn:    b.DoNorth,
+	}).Add(&command{
+		name:  "east",
+		alias: []string{"e"},
+		Fn:    b.DoEast,
+	}).Add(&command{
+		name:  "south",
+		alias: []string{"s"},
+		Fn:    b.DoSouth,
+	}).Add(&command{
+		name:  "west",
+		alias: []string{"w"},
+		Fn:    b.DoWest,
+	}).Add(&command{
+		name:  "up",
+		alias: []string{"u"},
+		Fn:    b.DoUp,
+	}).Add(&command{
+		name:  "down",
+		alias: []string{"d"},
+		Fn:    b.DoDown,
 	})
 	b.commands = commands
 	return b
@@ -54,7 +78,7 @@ func (b *BuildInterp) Read(text string) error {
 
 func (b *BuildInterp) doDigDir(dir direction) error {
 	currentRoom := b.p.GetRoom()
-	if currentRoom.LinkedRoom(dir) != nil {
+	if currentRoom.PhysicalRoom(dir) != nil {
 		b.p.Write("There's already a room '%s'.\n", Atlas.dirToName(dir))
 		return nil
 	}
@@ -86,8 +110,7 @@ func (b *BuildInterp) doDigDir(dir direction) error {
 
 	Atlas.AddRoom(room)
 
-	b.p.ToRoom(room)
-	b.p.Command("look")
+	b.p.gameInterp.doDir(dir)
 	return nil
 }
 
@@ -132,6 +155,61 @@ func (b *BuildInterp) Autobuild(args ...string) error {
 		b.p.Write("Autobuild has been disabled.")
 	}
 	return nil
+}
+
+func (b *BuildInterp) DoNorth(args ...string) error {
+	p := b.p
+	g := p.gameInterp
+	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirNorth) != nil {
+		g.doDir(dirNorth)
+		return nil
+	}
+	return b.doDigDir(dirNorth)
+}
+func (b *BuildInterp) DoSouth(args ...string) error {
+	p := b.p
+	g := p.gameInterp
+	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirSouth) != nil {
+		g.doDir(dirSouth)
+		return nil
+	}
+	return b.doDigDir(dirSouth)
+}
+func (b *BuildInterp) DoEast(args ...string) error {
+	p := b.p
+	g := p.gameInterp
+	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirEast) != nil {
+		g.doDir(dirEast)
+		return nil
+	}
+	return b.doDigDir(dirEast)
+}
+func (b *BuildInterp) DoWest(args ...string) error {
+	p := b.p
+	g := p.gameInterp
+	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirWest) != nil {
+		g.doDir(dirWest)
+		return nil
+	}
+	return b.doDigDir(dirWest)
+}
+func (b *BuildInterp) DoUp(args ...string) error {
+	p := b.p
+	g := p.gameInterp
+	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirUp) != nil {
+		g.doDir(dirUp)
+		return nil
+	}
+	return b.doDigDir(dirUp)
+}
+func (b *BuildInterp) DoDown(args ...string) error {
+	p := b.p
+	g := p.gameInterp
+	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirDown) != nil {
+		g.doDir(dirDown)
+		return nil
+	}
+	return b.doDigDir(dirDown)
 }
 
 func (b *BuildInterp) DoSet(args ...string) error {
