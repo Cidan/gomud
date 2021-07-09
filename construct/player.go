@@ -247,14 +247,13 @@ func (p *Player) WritePrompt() {
 // BuildPrompt displays the build prompt
 func (p *Player) BuildPrompt() {
 	room := p.GetRoom()
-	autobuild := ""
-
-	if p.Flag("autobuild") {
-		autobuild = "{R Autobuilding{x"
+	autobuild := "{gtrue{x"
+	if !p.Flag("autobuild") {
+		autobuild = "{rfalse{x"
 	}
 
 	str := fmt.Sprintf(
-		"\n\nBuilding in x:%d,y:%d,z:%d%s >\r\xff\xf9",
+		"\n\nRoom %d,%d,%d autobuild: %s >\r\xff\xf9",
 		room.Data.X,
 		room.Data.Y,
 		room.Data.Z,
