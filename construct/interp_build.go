@@ -283,7 +283,7 @@ func (b *BuildInterp) DoEdit(args ...string) error {
 
 func (b *BuildInterp) editRoom(field string) error {
 	p := b.p
-	room := p.inRoom
+	room := p.GetRoom()
 	var ctx context.Context
 
 	switch field {

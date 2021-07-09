@@ -98,6 +98,7 @@ func (l *Login) AskPassword(text string) error {
 		l.p.Stop()
 		return nil
 	}
+	// TODO(lobato): Add player to room before we atlas add player, make this atlas.getplayer and add only after room is not nil
 	if existingPlayer := Atlas.AddPlayer(l.p); existingPlayer != nil {
 		l.p.Write("An existing player was found, disconnecting that player and attaching you to that session.")
 		existingPlayer.Disconnect()

@@ -163,10 +163,6 @@ func (g *Game) doDir(dir direction) {
 
 	if g.p.CanExit(dir) {
 		target := room.LinkedRoom(dir)
-		if !g.p.FromRoom() {
-			g.p.Write("Unable to move yet.\n")
-			return
-		}
 		g.p.ToRoom(target)
 		g.p.Command("look")
 		return

@@ -188,6 +188,8 @@ func (p *Player) Start() {
 					Msg("Error interpreting input from player.")
 				log.Debug().Msg(str)
 			}
+			// Slow down the player a bit.
+			time.Sleep(time.Millisecond * 15)
 		}
 	}
 }
@@ -312,11 +314,13 @@ func (p *Player) Load() (bool, error) {
 func (p *Player) Stop() {
 	// TODO(lobato): Handle error
 	p.Save()
-	p.FromRoom()
+	p.cancel()
+	p.inRoom.RemovePlayer(p)
+	p.inRoom = nil
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.connection.Write([]byte("\n"))
 	Atlas.RemovePlayer(p)
-	p.cancel()
+
 }
 
 // ToRoom moves a player to a room
@@ -328,21 +332,13 @@ func (p *Player) ToRoom(target *Room) bool {
 	}
 
 	// Remove the player from the current room.
-	p.FromRoom()
+	if p.inRoom != nil {
+		p.inRoom.RemovePlayer(p)
+	}
 
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
 	target.AddPlayer(p)
-	return true
-}
-
-// FromRoom removes the player from their current room.
-func (p *Player) FromRoom() bool {
-	if p.inRoom == nil {
-		return true
-	}
-	p.inRoom.RemovePlayer(p)
-	p.inRoom = nil
 	return true
 }
 
