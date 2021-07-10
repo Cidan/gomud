@@ -123,9 +123,7 @@ func (r *Room) Delete() error {
 	// multiple rooms may be deleted at once, causing weird races where
 	// players would not exist in a room at all.
 	Atlas.roomModifierMutex.Lock()
-	r.exitsMutex.Lock()
 	defer Atlas.roomModifierMutex.Unlock()
-	defer r.exitsMutex.Unlock()
 	var toRoom *Room
 
 	for dir, exitRoom := range r.exitRooms {
@@ -144,6 +142,7 @@ func (r *Room) Delete() error {
 		exitRoom.exitRooms[dir] = nil
 		exitRoom.exitsMutex.Unlock()
 
+		r.exitsMutex.Lock()
 		// Isolate this room from other entries.
 		exit := r.Exit(exitDirections[dir])
 		exit.Closed = false
@@ -151,6 +150,7 @@ func (r *Room) Delete() error {
 		exit.Wall = false
 		exit.Target = ""
 		r.exitRooms[dir] = nil
+		r.exitsMutex.Unlock()
 	}
 
 	// Move all player to an adjecent room.

@@ -53,7 +53,7 @@ func TestPlayerMovementRace(t *testing.T) {
 	LogPlayerIn(t, reader, writer)
 
 	c := make(chan bool)
-	go func() {
+	go func(reader *bufio.Reader, writer *bufio.Writer) {
 		for i := 0; i < 100; i++ {
 			writer.WriteString("dig east\n")
 			assert.Nil(t, writer.Flush())
@@ -64,7 +64,7 @@ func TestPlayerMovementRace(t *testing.T) {
 			reader.ReadString('\r')
 		}
 		c <- true
-	}()
+	}(reader, writer)
 
 	for i := 0; i < 10000; i++ {
 		r := Atlas.GetRoom(1, 0, 0)
