@@ -7,6 +7,8 @@ import (
 
 	"github.com/Cidan/gomud/config"
 	"github.com/Cidan/gomud/mocks/server"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,6 +36,7 @@ func LogPlayerIn(t *testing.T, reader *bufio.Reader, writer *bufio.Writer) {
 // another go routine, ensuring room deletes are concurrently safe.
 // This test should be run with race detection via `go test -race -count=3`
 func TestPlayerMovementRace(t *testing.T) {
+	log.Level(zerolog.Disabled)
 	config.Set("save_path", t.TempDir())
 	makeStartingRoom()
 	p := NewPlayer()
@@ -99,7 +102,7 @@ func TestEditRoom(t *testing.T) {
 	assert.Nil(t, writer.Flush())
 	reader.ReadString('\r')
 
-	writer.WriteString(".\n")
+	writer.WriteString(":w\n")
 	assert.Nil(t, writer.Flush())
 	reader.ReadString('\r')
 
