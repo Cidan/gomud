@@ -352,8 +352,8 @@ func (p *Player) ToRoom(target *Room) bool {
 
 // GetRoom returns the room the player is currently in.
 func (p *Player) GetRoom() *Room {
-	p.roomMutex.Lock()
-	defer p.roomMutex.Unlock()
+	p.roomMutex.RLock()
+	defer p.roomMutex.RUnlock()
 	return p.inRoom
 }
 

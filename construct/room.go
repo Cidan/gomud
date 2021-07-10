@@ -362,6 +362,8 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 
 // Set an exit room for this direction.
 func (r *Room) SetExitRoom(dir direction, target *Room) {
+	r.exitsMutex.Lock()
+	defer r.exitsMutex.Unlock()
 	r.Exit(dir).Target = target.Data.UUID
 	r.exitRooms[dir] = target
 }
