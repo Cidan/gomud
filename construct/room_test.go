@@ -59,8 +59,7 @@ func TestPlayerMovementRace(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			writer.WriteString("dig east\n")
 			assert.Nil(t, writer.Flush())
-			repl, _ := reader.ReadString('\r')
-			fmt.Printf("%s for reply\n", repl)
+			reader.ReadString('\r')
 			writer.WriteString("west\n")
 			assert.Nil(t, writer.Flush())
 
