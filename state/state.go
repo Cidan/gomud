@@ -3,6 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
 
 type EventCallback func(string) error
@@ -16,12 +17,14 @@ type Event struct {
 type State struct {
 	current string
 	states  map[string]*Event
+	mutex   sync.RWMutex
 }
 
 func New(initial string) *State {
 	return &State{
 		states:  make(map[string]*Event),
 		current: initial,
+		mutex:   sync.RWMutex{},
 	}
 }
 
@@ -30,6 +33,8 @@ func (s *State) Add(e *Event) *State {
 	return s
 }
 
+// SetState will set the state of this machine. You must ensure
+// you only call SetState from a Process function to avoid a race.
 func (s *State) SetState(name string) error {
 	if s.states[name] == nil {
 		return fmt.Errorf("No such state defined, %s", name)
@@ -39,6 +44,8 @@ func (s *State) SetState(name string) error {
 }
 
 func (s *State) Process(text string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if s.states[s.current] == nil {
 		return errors.New("Invalid state set")
 	}

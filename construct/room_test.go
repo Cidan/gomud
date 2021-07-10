@@ -75,3 +75,23 @@ func TestPlayerMovementRace(t *testing.T) {
 	<-c
 	server.Close()
 }
+
+func TestEditRoom(t *testing.T) {
+	config.Set("save_path", t.TempDir())
+	makeStartingRoom()
+	p := NewPlayer()
+	assert.NotNil(t, p)
+	server := server.New()
+	go server.Listen(2021, func(c net.Conn) {
+		// Simulated player connection loop
+		p.SetConnection(c)
+		go p.Start()
+	})
+
+	conn, err := net.Dial("tcp", "localhost:2021")
+	assert.Nil(t, err)
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+
+	LogPlayerIn(t, reader, writer)
+}

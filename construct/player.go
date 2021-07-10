@@ -20,6 +20,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+var playerMutextList = []string{"flag", "room", "conn", "interp"}
+
 func hashPassword(pw string) string {
 	h := sha512.New()
 	io.WriteString(h, pw)
@@ -38,8 +40,7 @@ type Player struct {
 	currentInterp  Interp
 	inRoom         *Room
 	textBuffer     string
-	flagMutex      *sync.RWMutex
-	roomMutex      sync.RWMutex
+	mutex          map[string]*sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
 	lastActionTime time.Time
@@ -79,6 +80,12 @@ type roomWalk struct {
 // NewPlayer constructs a new player
 func NewPlayer() *Player {
 	ctx, cancel := context.WithCancel(context.Background())
+
+	mutex := make(map[string]*sync.RWMutex)
+	for _, m := range playerMutextList {
+		mutex[m] = &sync.RWMutex{}
+	}
+
 	p := &Player{
 		Data: &playerData{
 			UUID:  uuid.NewV4().String(),
@@ -87,13 +94,17 @@ func NewPlayer() *Player {
 		},
 		lastActionTime: time.Now(),
 		input:          make(chan string),
-		flagMutex:      new(sync.RWMutex),
-		roomMutex:      sync.RWMutex{},
+		mutex:          mutex,
 		ctx:            ctx,
 		cancel:         cancel,
 	}
 	p.setDefaults()
 	return p
+}
+
+// Mutex returns a named mutex for the player.
+func (p *Player) Mutex(mutex string) *sync.RWMutex {
+	return p.mutex[mutex]
 }
 
 // setDefaults sets various defaults for new players.
@@ -133,9 +144,10 @@ func (p *Player) playerTick() {
 
 // SetConnection sets the player connection object
 func (p *Player) SetConnection(c net.Conn) {
+	p.Mutex("conn").Lock()
 	p.connection = c
+	p.Mutex("conn").Unlock()
 	s := bufio.NewScanner(c)
-	//r := bufio.NewReader(c)
 	// Wrap our reader in a channel so that we can select it
 	// in the interp loop. When the connection is closed by p.Stop(),
 	// this loop will break.
@@ -178,7 +190,9 @@ func (p *Player) Start() {
 			return
 		case str := <-p.input:
 			str = strings.TrimSpace(str)
+			p.Mutex("interp").Lock()
 			err := p.currentInterp.Read(str)
+			p.Mutex("interp").Unlock()
 			switch err {
 			case ErrCommandNotFound:
 				p.Write("Huh?")
@@ -209,7 +223,7 @@ func (p *Player) Flush() {
 		p.textBuffer = color.Strip(p.textBuffer)
 	}
 
-	fmt.Fprintf(p.connection, "%s\r\xff\xf9", p.textBuffer)
+	p.WriteRaw("%s\r\xff\xf9", p.textBuffer)
 	p.WritePrompt()
 	p.textBuffer = ""
 }
@@ -223,7 +237,7 @@ func (p *Player) Write(text string, args ...interface{}) {
 		str = color.Strip(str)
 	}
 
-	fmt.Fprintf(p.connection, "%s\r\xff\xf9", str)
+	p.WriteRaw("%s\r\xff\xf9", str)
 	p.WritePrompt()
 }
 
@@ -236,7 +250,7 @@ func (p *Player) WritePrompt() {
 		str = color.Strip(str)
 	}
 	if p.currentInterp == p.textInterp {
-		fmt.Fprintf(p.connection, "\n[:w to save, :q to quit]\r\xff\xf9")
+		p.WriteRaw("\n[:w to save, :q to quit]\r\xff\xf9")
 		return
 	}
 	if p.IsBuilding() {
@@ -244,7 +258,7 @@ func (p *Player) WritePrompt() {
 		return
 	}
 	if p.ShowPrompt() {
-		fmt.Fprintf(p.connection, "\n\n%s\r\xff\xf9", str)
+		p.WriteRaw("\n\n%s\r\xff\xf9", str)
 	}
 }
 
@@ -270,11 +284,13 @@ func (p *Player) BuildPrompt() {
 		str = color.Strip(str)
 	}
 
-	fmt.Fprintf(p.connection, str)
+	p.WriteRaw(str)
 }
 
 // WriteRaw writes raw text to the player with no transforms.
 func (p *Player) WriteRaw(text string, args ...interface{}) {
+	p.Mutex("conn").RLock()
+	defer p.Mutex("conn").RUnlock()
 	fmt.Fprintf(p.connection, text, args...)
 }
 
@@ -337,23 +353,23 @@ func (p *Player) ToRoom(target *Room) bool {
 
 	// Remove the player from the current room.
 	if room != nil {
-		p.roomMutex.Lock()
+		p.Mutex("room").Lock()
 		room.RemovePlayer(p)
-		p.roomMutex.Unlock()
+		p.Mutex("room").Unlock()
 	}
 
-	p.roomMutex.Lock()
+	p.Mutex("room").Lock()
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
-	p.roomMutex.Unlock()
+	p.Mutex("room").Unlock()
 	target.AddPlayer(p)
 	return true
 }
 
 // GetRoom returns the room the player is currently in.
 func (p *Player) GetRoom() *Room {
-	p.roomMutex.RLock()
-	defer p.roomMutex.RUnlock()
+	p.Mutex("room").RLock()
+	defer p.Mutex("room").RUnlock()
 	return p.inRoom
 }
 
@@ -411,22 +427,22 @@ func (p *Player) Login() {
 
 // EnableFlag enables a given flag for a player.
 func (p *Player) EnableFlag(key string) {
-	p.flagMutex.Lock()
-	defer p.flagMutex.Unlock()
+	p.Mutex("flag").Lock()
+	defer p.Mutex("flag").Unlock()
 	p.Data.Flags[key] = true
 }
 
 // DisableFlag disables a flag for a player.
 func (p *Player) DisableFlag(key string) {
-	p.flagMutex.Lock()
-	defer p.flagMutex.Unlock()
+	p.Mutex("flag").Lock()
+	defer p.Mutex("flag").Unlock()
 	p.Data.Flags[key] = false
 }
 
 // ToggleFlag will toggle the flag from it's current state, and return the new state.
 func (p *Player) ToggleFlag(key string) bool {
-	p.flagMutex.Lock()
-	defer p.flagMutex.Unlock()
+	p.Mutex("flag").Lock()
+	defer p.Mutex("flag").Unlock()
 	v, ok := p.Data.Flags[key]
 
 	if !ok || !v {
@@ -440,8 +456,8 @@ func (p *Player) ToggleFlag(key string) bool {
 
 // Flag returns the state of a flag for a player.
 func (p *Player) Flag(key string) bool {
-	p.flagMutex.RLock()
-	defer p.flagMutex.RUnlock()
+	p.Mutex("flag").RLock()
+	defer p.Mutex("flag").RUnlock()
 	v, ok := p.Data.Flags[key]
 	if !ok {
 		return false
