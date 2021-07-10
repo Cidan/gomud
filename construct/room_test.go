@@ -94,4 +94,14 @@ func TestEditRoom(t *testing.T) {
 	writer := bufio.NewWriter(conn)
 
 	LogPlayerIn(t, reader, writer)
+
+	writer.WriteString("edit room description\n")
+	assert.Nil(t, writer.Flush())
+	reader.ReadString('\r')
+
+	writer.WriteString(".\n")
+	assert.Nil(t, writer.Flush())
+	reader.ReadString('\r')
+
+	server.Close()
 }
