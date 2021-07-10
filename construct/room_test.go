@@ -17,7 +17,6 @@ func LogPlayerIn(t *testing.T, reader *bufio.Reader, writer *bufio.Writer) {
 		"pass",
 		"pass",
 		"build",
-		"dig east",
 	}
 
 	// Read the login text first.
