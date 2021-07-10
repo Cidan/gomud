@@ -39,6 +39,7 @@ type Player struct {
 	inRoom         *Room
 	textBuffer     string
 	flagMutex      *sync.RWMutex
+	roomMutex      sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
 	lastActionTime time.Time
@@ -87,6 +88,7 @@ func NewPlayer() *Player {
 		lastActionTime: time.Now(),
 		input:          make(chan string),
 		flagMutex:      new(sync.RWMutex),
+		roomMutex:      sync.RWMutex{},
 		ctx:            ctx,
 		cancel:         cancel,
 	}
@@ -335,17 +337,23 @@ func (p *Player) ToRoom(target *Room) bool {
 
 	// Remove the player from the current room.
 	if room != nil {
+		p.roomMutex.Lock()
 		room.RemovePlayer(p)
+		p.roomMutex.Unlock()
 	}
 
+	p.roomMutex.Lock()
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
+	p.roomMutex.Unlock()
 	target.AddPlayer(p)
 	return true
 }
 
 // GetRoom returns the room the player is currently in.
 func (p *Player) GetRoom() *Room {
+	p.roomMutex.Lock()
+	defer p.roomMutex.Unlock()
 	return p.inRoom
 }
 

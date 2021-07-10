@@ -6,25 +6,27 @@ import (
 )
 
 type AtlasData struct {
-	worldMap        map[string]*Room
-	worldRoomUUID   map[string]*Room
-	allPlayers      map[string]*Player
-	worldSize       int64
-	worldMapMutex   sync.RWMutex
-	worldRoomMutex  sync.RWMutex
-	allPlayersMutex sync.RWMutex
+	worldMap          map[string]*Room
+	worldRoomUUID     map[string]*Room
+	allPlayers        map[string]*Player
+	worldSize         int64
+	worldMapMutex     sync.RWMutex
+	worldRoomMutex    sync.RWMutex
+	allPlayersMutex   sync.RWMutex
+	roomModifierMutex sync.Mutex
 }
 
 var Atlas *AtlasData
 
 func init() {
 	Atlas = &AtlasData{
-		worldMap:        make(map[string]*Room),
-		worldRoomUUID:   make(map[string]*Room),
-		allPlayers:      make(map[string]*Player),
-		worldMapMutex:   sync.RWMutex{},
-		worldRoomMutex:  sync.RWMutex{},
-		allPlayersMutex: sync.RWMutex{},
+		worldMap:          make(map[string]*Room),
+		worldRoomUUID:     make(map[string]*Room),
+		allPlayers:        make(map[string]*Player),
+		worldMapMutex:     sync.RWMutex{},
+		worldRoomMutex:    sync.RWMutex{},
+		allPlayersMutex:   sync.RWMutex{},
+		roomModifierMutex: sync.Mutex{},
 	}
 }
 

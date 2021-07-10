@@ -114,6 +114,55 @@ func NewRoom() *Room {
 	}
 }
 
+// Delete will delete a room from the world, unlinking it from
+// the game, and shunting players in a random open direction.
+// If no direction is available, the player is returned to 0,0,0
+// for now, until home rooms are implemented.
+func (r *Room) Delete() error {
+	// Lock globally when deleting a room. This prevents a race where
+	// multiple rooms may be deleted at once, causing weird races where
+	// players would not exist in a room at all.
+	Atlas.roomModifierMutex.Lock()
+	r.exitsMutex.Lock()
+	defer Atlas.roomModifierMutex.Unlock()
+	defer r.exitsMutex.Unlock()
+	var toRoom *Room
+
+	for dir, exitRoom := range r.exitRooms {
+		if exitRoom == nil {
+			continue
+		}
+		exitRoom.exitsMutex.Lock()
+		// Isolate entry from the target room from other directions.
+		inverse := inverseDirections[exitDirections[dir]]
+		exitRoom.Exit(inverse).Target = ""
+		exitRoom.Exit(inverse).Closed = false
+		exitRoom.Exit(inverse).Wall = false
+		exitRoom.Exit(inverse).Locked = false
+		exitRoom.Exit(inverse).Name = ""
+		toRoom = exitRoom
+		exitRoom.exitRooms[dir] = nil
+		exitRoom.exitsMutex.Unlock()
+
+		// Isolate this room from other entries.
+		exit := r.Exit(exitDirections[dir])
+		exit.Closed = false
+		exit.Door = false
+		exit.Wall = false
+		exit.Target = ""
+		r.exitRooms[dir] = nil
+	}
+
+	// Move all player to an adjecent room.
+	if toRoom != nil {
+		for _, p := range r.players {
+			p.ToRoom(toRoom)
+		}
+	}
+
+	return nil
+}
+
 // GetName returns the human readable name of a room.
 func (r *Room) GetName() string {
 	return r.Data.Name
@@ -162,6 +211,8 @@ func (r *Room) Save() error {
 // LinkedRoom returns a room to which this room can traverse to using
 // a direction or portal, given the direction/portal name
 func (r *Room) LinkedRoom(dir direction) *Room {
+	r.exitsMutex.Lock()
+	defer r.exitsMutex.Unlock()
 	return r.exitRooms[dir]
 }
 
@@ -188,6 +239,8 @@ func (r *Room) PhysicalRoom(dir direction) *Room {
 // AddPlayer adds a player to a room.
 func (r *Room) AddPlayer(player *Player) {
 	r.playerMutex.Lock()
+	r.exitsMutex.Lock()
+	defer r.exitsMutex.Unlock()
 	defer r.playerMutex.Unlock()
 	r.players[player.GetUUID()] = player
 }
@@ -358,6 +411,8 @@ func (r *Room) CanExit(dir direction) bool {
 	if r.LinkedRoom(dir) == nil {
 		return false
 	}
+	r.exitsMutex.Lock()
+	defer r.exitsMutex.Unlock()
 	exit := r.Exit(dir)
 	if exit.Closed || exit.Wall {
 		return false
