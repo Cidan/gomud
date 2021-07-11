@@ -20,7 +20,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var playerMutextList = []string{"flag", "room", "conn", "interp", "buffer"}
+var playerMutextList = []string{"flag", "room", "conn", "interp", "buffer", "lastAction", "setInterp"}
 
 func hashPassword(pw string) string {
 	h := sha512.New()
@@ -157,7 +157,9 @@ func (p *Player) SetConnection(c net.Conn) {
 				break
 			}
 			p.input <- s.Text()
+			p.Mutex("lastAction").Lock()
 			p.lastActionTime = time.Now()
+			p.Mutex("lastAction").Unlock()
 		}
 	}(s)
 }
@@ -253,10 +255,15 @@ func (p *Player) WritePrompt() {
 	} else {
 		str = color.Strip(str)
 	}
+
+	p.Mutex("setInterp").RLock()
 	if p.currentInterp == p.textInterp {
+		defer p.Mutex("setInterp").RUnlock()
 		p.WriteRaw("\n[:w to save, :q to quit]\r\xff\xf9")
 		return
 	}
+	p.Mutex("setInterp").RUnlock()
+
 	if p.IsBuilding() {
 		p.BuildPrompt()
 		return
@@ -295,7 +302,9 @@ func (p *Player) BuildPrompt() {
 func (p *Player) WriteRaw(text string, args ...interface{}) {
 	p.Mutex("conn").RLock()
 	defer p.Mutex("conn").RUnlock()
-	fmt.Fprintf(p.connection, text, args...)
+	if conn := p.connection; conn != nil {
+		fmt.Fprintf(p.connection, text, args...)
+	}
 }
 
 // Save a player to disk
@@ -342,7 +351,7 @@ func (p *Player) Stop() {
 		p.inRoom = nil
 	}
 	// Write a new line to ensure some clients don't buffer the last output.
-	p.connection.Write([]byte("\n"))
+	p.WriteRaw("\n")
 	Atlas.RemovePlayer(p)
 
 }
@@ -413,7 +422,9 @@ func (p *Player) SetPassword(password string) {
 
 // SetInterp for a player.
 func (p *Player) setInterp(i Interp) {
+	p.Mutex("setInterp").Lock()
 	p.currentInterp = i
+	p.Mutex("setInterp").Unlock()
 }
 
 // Build switches a player to the Build interp.
