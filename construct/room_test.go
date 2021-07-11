@@ -2,58 +2,17 @@ package construct
 
 import (
 	"bufio"
-	"net"
 	"testing"
 
-	"github.com/Cidan/gomud/config"
-	"github.com/Cidan/gomud/mocks/server"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
-
-func LogPlayerIn(t *testing.T, reader *bufio.Reader, writer *bufio.Writer) {
-	loginCommands := []string{
-		"Test",
-		"yes",
-		"pass",
-		"pass",
-		"build",
-	}
-
-	// Read the login text first.
-	_, err := reader.ReadString('\r')
-	assert.Nil(t, err)
-	for _, command := range loginCommands {
-		writer.WriteString(command + "\n")
-		writer.Flush()
-		_, err := reader.ReadString('\r')
-		assert.Nil(t, err)
-	}
-}
 
 // This test rapidly moves a player between two rooms, while deleting a room in
 // another go routine, ensuring room deletes are concurrently safe.
 // This test should be run with race detection via `go test -race -count=3`
 func TestPlayerMovementRace(t *testing.T) {
-	log.Level(zerolog.Disabled)
-	config.Set("save_path", t.TempDir())
-	makeStartingRoom()
-	p := NewPlayer()
-	assert.NotNil(t, p)
-	server := server.New()
-	go server.Listen(2020, func(c net.Conn) {
-		// Simulated player connection loop
-		p.SetConnection(c)
-		go p.Start()
-	})
-
-	conn, err := net.Dial("tcp", "localhost:2020")
-	assert.Nil(t, err)
-	reader := bufio.NewReader(conn)
-	writer := bufio.NewWriter(conn)
-
-	LogPlayerIn(t, reader, writer)
+	s := testSetupServer(t, 2020)
+	r, w := testLoginNewUser(t, "PlayerMovementRace", s)
 
 	c := make(chan bool)
 	go func(reader *bufio.Reader, writer *bufio.Writer) {
@@ -67,7 +26,7 @@ func TestPlayerMovementRace(t *testing.T) {
 			reader.ReadString('\r')
 		}
 		c <- true
-	}(reader, writer)
+	}(r, w)
 
 	for i := 0; i < 10000; i++ {
 		r := Atlas.GetRoom(1, 0, 0)
@@ -76,35 +35,20 @@ func TestPlayerMovementRace(t *testing.T) {
 		}
 	}
 	<-c
-	server.Close()
+	s.Close()
 }
 
 func TestEditRoom(t *testing.T) {
-	config.Set("save_path", t.TempDir())
-	makeStartingRoom()
-	p := NewPlayer()
-	assert.NotNil(t, p)
-	server := server.New()
-	go server.Listen(2021, func(c net.Conn) {
-		// Simulated player connection loop
-		p.SetConnection(c)
-		go p.Start()
-	})
+	s := testSetupServer(t, 2020)
+	r, w := testLoginNewUser(t, "EditRoom", s)
 
-	conn, err := net.Dial("tcp", "localhost:2021")
-	assert.Nil(t, err)
-	reader := bufio.NewReader(conn)
-	writer := bufio.NewWriter(conn)
+	w.WriteString("edit room description\n")
+	assert.Nil(t, w.Flush())
+	r.ReadString('\r')
 
-	LogPlayerIn(t, reader, writer)
+	w.WriteString(":w\n")
+	assert.Nil(t, w.Flush())
+	r.ReadString('\r')
 
-	writer.WriteString("edit room description\n")
-	assert.Nil(t, writer.Flush())
-	reader.ReadString('\r')
-
-	writer.WriteString(":w\n")
-	assert.Nil(t, writer.Flush())
-	reader.ReadString('\r')
-
-	server.Close()
+	s.Close()
 }

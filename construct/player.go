@@ -20,7 +20,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var playerMutextList = []string{"flag", "room", "conn", "interp"}
+var playerMutextList = []string{"flag", "room", "conn", "interp", "buffer"}
 
 func hashPassword(pw string) string {
 	h := sha512.New()
@@ -85,7 +85,6 @@ func NewPlayer() *Player {
 	for _, m := range playerMutextList {
 		mutex[m] = &sync.RWMutex{}
 	}
-
 	p := &Player{
 		Data: &playerData{
 			UUID:  uuid.NewV4().String(),
@@ -98,6 +97,7 @@ func NewPlayer() *Player {
 		ctx:            ctx,
 		cancel:         cancel,
 	}
+
 	p.setDefaults()
 	return p
 }
@@ -212,6 +212,8 @@ func (p *Player) Start() {
 
 // Buffer will buffer output text until Flush() is called.
 func (p *Player) Buffer(text string, args ...interface{}) {
+	p.Mutex("buffer").Lock()
+	defer p.Mutex("buffer").Unlock()
 	p.textBuffer += fmt.Sprintf(text, args...)
 }
 
@@ -225,7 +227,9 @@ func (p *Player) Flush() {
 
 	p.WriteRaw("%s\r\xff\xf9", p.textBuffer)
 	p.WritePrompt()
+	p.Mutex("buffer").Lock()
 	p.textBuffer = ""
+	p.Mutex("buffer").Unlock()
 }
 
 // Write output to a player.
@@ -333,8 +337,10 @@ func (p *Player) Stop() {
 	// TODO(lobato): Handle error
 	p.Save()
 	p.cancel()
-	p.inRoom.RemovePlayer(p)
-	p.inRoom = nil
+	if room := p.inRoom; room != nil {
+		room.RemovePlayer(p)
+		p.inRoom = nil
+	}
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.connection.Write([]byte("\n"))
 	Atlas.RemovePlayer(p)

@@ -7,17 +7,20 @@ import (
 
 type Server struct {
 	listener net.Listener
+	Port     int
 }
 
-func New() *Server {
-	return &Server{}
+func New(port int) *Server {
+	return &Server{
+		Port: port,
+	}
 }
 
 type connectFn func(net.Conn)
 
 // Listen on a port for player connections.
-func (s *Server) Listen(port int, fn connectFn) error {
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func (s *Server) Listen(fn connectFn) error {
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.Port))
 	if err != nil {
 		return err
 	}
