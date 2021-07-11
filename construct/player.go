@@ -184,8 +184,8 @@ func (p *Player) Start() {
 			if p.currentInterp == p.textInterp {
 				p.Command(":q")
 			}
-			if p.connection != nil {
-				p.connection.Close()
+			if conn := p.connection; conn != nil {
+				conn.Close()
 			}
 			return
 		case str := <-p.input:
