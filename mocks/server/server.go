@@ -40,5 +40,6 @@ func (s *Server) Listen(fn connectFn) error {
 }
 
 func (s *Server) Close() {
+	fmt.Printf("listener is %v\n", s.listener)
 	s.listener.Close()
 }

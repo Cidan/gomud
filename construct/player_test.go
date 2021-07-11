@@ -2,6 +2,7 @@ package construct
 
 import (
 	"bufio"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,8 @@ func runCommands(t *testing.T, r *bufio.Reader, w *bufio.Writer, commands []stri
 	for _, command := range commands {
 		w.WriteString(command + "\n")
 		assert.NoError(t, w.Flush())
-		_, err := r.ReadString('\r')
+		recv, err := r.ReadString('\r')
+		fmt.Printf("got %s\n", recv)
 		assert.NoError(t, err)
 	}
 }
@@ -56,5 +58,24 @@ func TestPlayerInterpSwap(t *testing.T) {
 	}
 
 	runCommands(t, r, w, commands)
+	s.Close()
+}
+
+func TestPlayerReconnect(t *testing.T) {
+	s := testSetupServer(t, 2024)
+	r, w := testLoginNewUser(t, "PlayerReconnect", s)
+	runCommands(t, r, w, []string{
+		"save",
+		"save",
+		"save",
+		"save",
+	})
+	fmt.Printf("About to try a reconnect\n")
+	rl, wl := testLoginUser(t, "PlayerReconnect", s)
+	runCommands(t, rl, wl, []string{
+		"say hi",
+		"save",
+		"quit",
+	})
 	s.Close()
 }

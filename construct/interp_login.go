@@ -157,6 +157,7 @@ func (l *Login) ConfirmPassword(text string) error {
 	}
 	l.p.Write("Entering the world!")
 	l.p.Game()
+	Atlas.AddPlayer(l.p)
 	l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil

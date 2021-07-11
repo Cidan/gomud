@@ -45,12 +45,43 @@ func testLoginNewUser(t *testing.T, name string, server *server.Server) (*bufio.
 	}
 
 	// Read the login text first.
-	_, err = reader.ReadString('\r')
-	assert.Nil(t, err)
+	recv, err := reader.ReadString('\r')
+	fmt.Printf("testLoginNewUser(): got %s\n", recv)
+	assert.NoError(t, err)
 	for _, command := range loginCommands {
 		writer.WriteString(command + "\n")
 		writer.Flush()
-		_, err := reader.ReadString('\r')
+		recv, err := reader.ReadString('\r')
+		fmt.Printf("testLoginNewUser(): command got: %s\n", recv)
+		assert.NoError(t, err)
+	}
+
+	return reader, writer
+}
+
+func testLoginUser(t *testing.T, name string, server *server.Server) (*bufio.Reader, *bufio.Writer) {
+	t.Helper()
+
+	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", server.Port))
+	assert.NoError(t, err)
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+
+	loginCommands := []string{
+		name,
+		"pass",
+		"build",
+	}
+
+	// Read the login text first.
+	recv, err := reader.ReadString('\r')
+	fmt.Printf("testLoginUser(): got %s\n", recv)
+	assert.NoError(t, err)
+	for _, command := range loginCommands {
+		writer.WriteString(command + "\n")
+		writer.Flush()
+		recv, err := reader.ReadString('\r')
+		fmt.Printf("testLoginUser(): command got: %s\n", recv)
 		assert.NoError(t, err)
 	}
 
