@@ -12,7 +12,7 @@ import (
 // This test should be run with race detection via `go test -race -count=3`
 func TestPlayerMovementRace(t *testing.T) {
 	s := testSetupServer(t, 2020)
-	r, w := testLoginNewUser(t, "PlayerMovementRace", s)
+	r, w := testLoginNewUser(t, "Playerm", s)
 
 	c := make(chan bool)
 	go func(reader *bufio.Reader, writer *bufio.Writer) {
