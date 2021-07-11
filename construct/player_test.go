@@ -2,6 +2,7 @@ package construct
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"testing"
 
@@ -10,20 +11,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTest(t *testing.T) (*bufio.Reader, *bufio.Writer, *server.Server) {
+func setupTest(t *testing.T, port int) (*bufio.Reader, *bufio.Writer, *server.Server) {
 	t.Helper()
 	config.Set("save_path", t.TempDir())
 	makeStartingRoom()
 	p := NewPlayer()
 	assert.NotNil(t, p)
 	server := server.New()
-	go server.Listen(2020, func(c net.Conn) {
+	go server.Listen(port, func(c net.Conn) {
 		// Simulated player connection loop
 		p.SetConnection(c)
 		go p.Start()
 	})
 
-	conn, err := net.Dial("tcp", "localhost:2020")
+	conn, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
 	assert.Nil(t, err)
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
@@ -40,7 +41,7 @@ func runCommands(t *testing.T, r *bufio.Reader, w *bufio.Writer, commands []stri
 }
 
 func TestPlayerMap(t *testing.T) {
-	r, w, s := setupTest(t)
+	r, w, s := setupTest(t, 2023)
 	LogPlayerIn(t, r, w)
 	var commands = []string{
 		"dig west",
@@ -52,11 +53,10 @@ func TestPlayerMap(t *testing.T) {
 }
 
 func TestPlayerSaveAndQuit(t *testing.T) {
-	r, w, s := setupTest(t)
+	r, w, s := setupTest(t, 2024)
 	LogPlayerIn(t, r, w)
 	var commands = []string{
 		"save",
-		"quit",
 	}
 
 	runCommands(t, r, w, commands)
@@ -64,7 +64,7 @@ func TestPlayerSaveAndQuit(t *testing.T) {
 }
 
 func TestPlayerInterpSwap(t *testing.T) {
-	r, w, s := setupTest(t)
+	r, w, s := setupTest(t, 2025)
 	LogPlayerIn(t, r, w)
 	var commands = []string{
 		"build",
@@ -73,7 +73,6 @@ func TestPlayerInterpSwap(t *testing.T) {
 		"This is a name",
 		":w",
 		"save",
-		"quit",
 	}
 
 	runCommands(t, r, w, commands)

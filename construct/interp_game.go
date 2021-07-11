@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
 // Game interp for handling user login
@@ -79,12 +77,14 @@ func NewGameInterp(p *Player) *Game {
 
 func (g *Game) Read(text string) error {
 	all := strings.SplitN(text, " ", 2)
-	log.
-		Debug().
-		Interface("command", all).
-		Str("player.uuid", g.p.GetUUID()).
-		Str("player.name", g.p.GetName()).
-		Msg("Command")
+	/*
+		log.
+			Debug().
+			Interface("command", all).
+			Str("player.uuid", g.p.GetUUID()).
+			Str("player.name", g.p.GetName()).
+			Msg("Command")
+	*/
 	return g.commands.Process(all[0], all[1:]...)
 }
 

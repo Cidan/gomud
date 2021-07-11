@@ -3,8 +3,6 @@ package construct
 import (
 	"context"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
 // BuildInterp is the builder interp, used for world crafting and modifying
@@ -67,13 +65,14 @@ func NewBuildInterp(p *Player) *BuildInterp {
 
 func (b *BuildInterp) Read(text string) error {
 	all := strings.SplitN(text, " ", 2)
-	log.
-		Debug().
-		Interface("command", all).
-		Str("player.uuid", b.p.GetUUID()).
-		Str("player.name", b.p.GetName()).
-		Msg("Command")
-
+	/*
+		log.
+			Debug().
+			Interface("command", all).
+			Str("player.uuid", b.p.GetUUID()).
+			Str("player.name", b.p.GetName()).
+			Msg("Command")
+	*/
 	if b.commands.Has(all[0]) {
 		return b.commands.Process(all[0], all[1:]...)
 	}
