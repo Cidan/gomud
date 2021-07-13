@@ -12,7 +12,9 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
@@ -20,7 +22,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var playerMutextList = []string{"flag", "room", "conn", "interp", "buffer", "lastAction", "setInterp"}
+var playerMutextList = []string{"flag", "room", "conn", "interp", "buffer", "lastAction"}
 
 func hashPassword(pw string) string {
 	h := sha512.New()
@@ -40,6 +42,7 @@ type Player struct {
 	currentInterp  Interp
 	inRoom         *Room
 	textBuffer     string
+	lock           sync.RWMutex
 	mutex          map[string]*sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
@@ -93,6 +96,7 @@ func NewPlayer() *Player {
 		},
 		lastActionTime: time.Now(),
 		input:          make(chan string),
+		lock:           sync.RWMutex{},
 		mutex:          mutex,
 		ctx:            ctx,
 		cancel:         cancel,
@@ -191,10 +195,23 @@ func (p *Player) Start() {
 			}
 			return
 		case str := <-p.input:
+			// TODO(lobato): interp changes?
+			select {
+			default:
+				break
+			}
 			str = strings.TrimSpace(str)
-			p.Mutex("interp").Lock()
+			p.Mutex("interp").RLock()
+			// There are times during login where the interp might be nil.
+			// We loop here, unlocking and giving a chance for the write lock
+			// to apply, until the interp is no longer nil.
+			for p.currentInterp == nil {
+				p.Mutex("interp").RUnlock()
+				time.Sleep(1 * time.Millisecond)
+				p.Mutex("interp").RLock()
+			}
 			err := p.currentInterp.Read(str)
-			p.Mutex("interp").Unlock()
+			p.Mutex("interp").RUnlock()
 			switch err {
 			case ErrCommandNotFound:
 				p.Write("Huh?")
@@ -244,7 +261,7 @@ func (p *Player) Write(text string, args ...interface{}) {
 	}
 
 	p.WriteRaw("%s\r\xff\xf9", str)
-	p.WritePrompt()
+	go p.WritePrompt()
 }
 
 // WritePrompt will write the player prompt to the player.
@@ -256,13 +273,13 @@ func (p *Player) WritePrompt() {
 		str = color.Strip(str)
 	}
 
-	p.Mutex("setInterp").RLock()
+	p.Mutex("interp").RLock()
 	if p.currentInterp == p.textInterp {
-		defer p.Mutex("setInterp").RUnlock()
+		defer p.Mutex("interp").RUnlock()
 		p.WriteRaw("\n[:w to save, :q to quit]\r\xff\xf9")
 		return
 	}
-	p.Mutex("setInterp").RUnlock()
+	p.Mutex("interp").RUnlock()
 
 	if p.IsBuilding() {
 		p.BuildPrompt()
@@ -332,12 +349,16 @@ func (p *Player) Load() (bool, error) {
 		log.Error().Err(err).Str("player", p.Data.Name).Msg("error loading player")
 		return false, nil
 	}
-
-	err = json.Unmarshal(data, &p.Data)
+	var pd playerData
+	err = json.Unmarshal(data, &pd)
 	if err != nil {
 		return false, err
 	}
 
+	// Load the data via an atomic pointer swap so we don't have to lock.
+	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
+	value := unsafe.Pointer(&pd)
+	atomic.StorePointer(target, value)
 	return true, nil
 }
 
@@ -346,10 +367,16 @@ func (p *Player) Stop() {
 	// TODO(lobato): Handle error
 	p.Save()
 	p.cancel()
-	if room := p.inRoom; room != nil {
-		room.RemovePlayer(p)
-		p.inRoom = nil
-	}
+	target := (*unsafe.Pointer)(unsafe.Pointer(&p.inRoom))
+	atomic.StorePointer(target, nil)
+	/*
+		p.Mutex("room").Lock()
+		if room := p.inRoom; room != nil {
+			room.RemovePlayer(p)
+			p.inRoom = nil
+		}
+		p.Mutex("room").Unlock()
+	*/
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.WriteRaw("\n")
 	Atlas.RemovePlayer(p)
@@ -359,12 +386,11 @@ func (p *Player) Stop() {
 // ToRoom moves a player to a room
 // TODO: Eventually, unwind combat, etc.
 func (p *Player) ToRoom(target *Room) bool {
+	room := p.GetRoom()
 	// Player is already in the room, don't do anything.
-	if p.inRoom == target {
+	if room == target {
 		return true
 	}
-
-	room := p.GetRoom()
 
 	// Remove the player from the current room.
 	if room != nil {
@@ -385,12 +411,17 @@ func (p *Player) ToRoom(target *Room) bool {
 func (p *Player) GetRoom() *Room {
 	p.Mutex("room").RLock()
 	defer p.Mutex("room").RUnlock()
-	return p.inRoom
+	target := (*unsafe.Pointer)(unsafe.Pointer(&p.inRoom))
+	return (*Room)(atomic.LoadPointer(target))
 }
 
 // Command runs a command through the interp for the player.
 func (p *Player) Command(cmd string) error {
-	return p.currentInterp.Read(cmd)
+	// Commands lock the interp via input, so spool this off.
+	go func(p *Player, cmd string) {
+		p.input <- cmd + "\n"
+	}(p, cmd)
+	return nil
 }
 
 // GetUUID of a player.
@@ -422,9 +453,14 @@ func (p *Player) SetPassword(password string) {
 
 // SetInterp for a player.
 func (p *Player) setInterp(i Interp) {
-	p.Mutex("setInterp").Lock()
-	p.currentInterp = i
-	p.Mutex("setInterp").Unlock()
+	// SetInterp will always run at some point in the future. This is because
+	// the interp may be locked from active usage, i.e. changing the interp
+	// based on a user command, where the interp is locked.
+	go func(p *Player, i Interp) {
+		p.Mutex("interp").Lock()
+		p.currentInterp = i
+		p.Mutex("interp").Unlock()
+	}(p, i)
 }
 
 // Build switches a player to the Build interp.
@@ -473,18 +509,26 @@ func (p *Player) ToggleFlag(key string) bool {
 
 // Flag returns the state of a flag for a player.
 func (p *Player) Flag(key string) bool {
+	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
+	data := (*playerData)(atomic.LoadPointer(target))
 	p.Mutex("flag").RLock()
 	defer p.Mutex("flag").RUnlock()
-	v, ok := p.Data.Flags[key]
+	v, ok := data.Flags[key]
 	if !ok {
 		return false
 	}
 	return v
 }
 
+func (p *Player) GetData() *playerData {
+	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
+	return (*playerData)(atomic.LoadPointer(target))
+}
+
 // Prompt will return the generated/interpreted prompt for this player.
 func (p *Player) Prompt() string {
-	str := p.Data.Prompt
+	data := p.GetData()
+	str := data.Prompt
 	str = strings.ReplaceAll(str, "%h", fmt.Sprintf("%d", p.GetStat("health")))
 	str = strings.ReplaceAll(str, "%m", fmt.Sprintf("%d", p.GetStat("mana")))
 	str = strings.ReplaceAll(str, "%v", fmt.Sprintf("%d", p.GetStat("move")))
@@ -511,6 +555,8 @@ func (p *Player) ShowPrompt() bool {
 
 // IsInGame returns true if the player is in the game world, i.e. not logging in/creating.
 func (p *Player) IsInGame() bool {
+	p.Mutex("interp").RLock()
+	defer p.Mutex("interp").RUnlock()
 	if p.currentInterp == p.gameInterp || p.currentInterp == p.buildInterp {
 		return true
 	}
@@ -527,19 +573,21 @@ func (p *Player) IsBuilding() bool {
 
 // GetStat will return the value of a stat.
 func (p *Player) GetStat(key string) int64 {
+	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
+	data := (*playerData)(atomic.LoadPointer(target))
 	switch key {
 	case "health":
-		return p.Data.Stats.Health
+		return data.Stats.Health
 	case "mana":
-		return p.Data.Stats.Mana
+		return data.Stats.Mana
 	case "move":
-		return p.Data.Stats.Move
+		return data.Stats.Move
 	case "max_health":
-		return p.Data.Stats.MaxHealth
+		return data.Stats.MaxHealth
 	case "max_mana":
-		return p.Data.Stats.MaxMana
+		return data.Stats.MaxMana
 	case "max_move":
-		return p.Data.Stats.MaxMove
+		return data.Stats.MaxMove
 	default:
 		// Panic and kill the whole game to avoid player corruption.
 		log.Panic().Str("stat", key).Msg("invalid stat, panic to stop player corruption")
