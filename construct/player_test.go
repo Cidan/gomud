@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -78,4 +79,5 @@ func TestPlayerReconnect(t *testing.T) {
 		"quit",
 	})
 	s.Close()
+	time.Sleep(5 * time.Second)
 }
