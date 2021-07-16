@@ -43,7 +43,7 @@ func (e *TextInterp) Read(ctx context.Context, text string) error {
 	}
 	e.quit = false
 	e.buffer += text + "\n"
-	e.p.Write(e.buffer)
+	e.p.Write(ctx, e.buffer)
 	return nil
 }
 
@@ -66,7 +66,7 @@ func (e *TextInterp) DoDone(ctx context.Context, args ...string) error {
 	result := strings.TrimSuffix(e.buffer, "\n")
 	*e.field = result
 	e.field = nil
-	e.p.Write("{GText saved.{x")
+	e.p.Write(ctx, "{GText saved.{x")
 	e.cancel()
 	return nil
 }
@@ -74,10 +74,10 @@ func (e *TextInterp) DoDone(ctx context.Context, args ...string) error {
 func (e *TextInterp) DoCancel(ctx context.Context, args ...string) error {
 	if e.quit {
 		e.field = nil
-		e.p.Write("{RCancelling editing, text not saved.{x")
+		e.p.Write(ctx, "{RCancelling editing, text not saved.{x")
 		e.cancel()
 	} else {
-		e.p.Write("Type :q to quit again. Any other command will back out.")
+		e.p.Write(ctx, "Type :q to quit again. Any other command will back out.")
 		e.quit = true
 	}
 	return nil

@@ -72,36 +72,36 @@ func (l *Login) ValidateName(name string) bool {
 func (l *Login) AskName(ctx context.Context, text string) error {
 	// Check for save
 	if !l.ValidateName(text) {
-		l.p.Write("That is an invalid name. Your name may contain only a-zA-Z and a single apostophe, and must be less than 16 letters long.\n")
-		l.p.Write("So then, what's your name?")
+		l.p.Write(ctx, "That is an invalid name. Your name may contain only a-zA-Z and a single apostophe, and must be less than 16 letters long.\n")
+		l.p.Write(ctx, "So then, what's your name?")
 		return nil
 	}
 
 	l.p.SetName(text)
 	loaded, err := l.p.Load()
 	if err == nil && !loaded {
-		l.p.Write("Are you sure you want to be known as %s?", text)
+		l.p.Write(ctx, "Are you sure you want to be known as %s?", text)
 		return l.state.SetState("CONFIRM_NAME")
 	}
 	if err != nil {
-		l.p.Write("Something went wrong trying to load your pfile, contact an admin.")
-		l.p.Stop()
+		l.p.Write(ctx, "Something went wrong trying to load your pfile, contact an admin.")
+		l.p.Stop(ctx)
 		return err
 	}
-	l.p.Write("Password: ")
+	l.p.Write(ctx, "Password: ")
 	return l.state.SetState("ASK_PASSWORD")
 }
 
 // AskPassword step.
 func (l *Login) AskPassword(ctx context.Context, text string) error {
 	if !l.p.IsPassword(text) {
-		l.p.Write("Wrong password. Bye.")
-		l.p.Stop()
+		l.p.Write(ctx, "Wrong password. Bye.")
+		l.p.Stop(ctx)
 		return nil
 	}
 	// TODO(lobato): Add player to room before we atlas add player, make this atlas.getplayer and add only after room is not nil
 	if existingPlayer := Atlas.AddPlayer(l.p); existingPlayer != nil {
-		l.p.Write("An existing player was found, disconnecting that player and attaching you to that session.")
+		l.p.Write(ctx, "An existing player was found, disconnecting that player and attaching you to that session.")
 		existingPlayer.Disconnect()
 		// Quick hack to break the current connection input scanner, which will return
 		// false and break the read loop if a deadline passes.
@@ -111,18 +111,18 @@ func (l *Login) AskPassword(ctx context.Context, text string) error {
 		time.Sleep(time.Millisecond * 1)
 		l.p.connection.SetReadDeadline(time.Time{})
 
-		existingPlayer.SetConnection(l.p.connection)
+		existingPlayer.SetConnection(ctx, l.p.connection)
 		l.p.connection = nil
 		l.p.cancel()
 		existingPlayer.Command("look")
 		return nil
 	}
 
-	l.p.Write("Entering the world!")
+	l.p.Write(ctx, "Entering the world!")
 	if target := Atlas.GetRoomByUUID(l.p.Data.Room); target != nil {
-		l.p.ToRoom(target)
+		l.p.ToRoom(ctx, target)
 	} else {
-		l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
+		l.p.ToRoom(ctx, Atlas.GetRoom(0, 0, 0))
 	}
 
 	l.p.Game(ctx)
@@ -133,11 +133,11 @@ func (l *Login) AskPassword(ctx context.Context, text string) error {
 // ConfirmName step.
 func (l *Login) ConfirmName(ctx context.Context, text string) error {
 	if text != "yes" && text != "y" {
-		l.p.Write("Okay, so what's your name?")
+		l.p.Write(ctx, "Okay, so what's your name?")
 		return l.state.SetState("ASK_NAME")
 	}
 
-	l.p.Write("Welcome %s, please give me a password: ", l.p.GetName())
+	l.p.Write(ctx, "Welcome %s, please give me a password: ", l.p.GetName())
 	return l.state.SetState("NEW_PASSWORD")
 }
 
@@ -145,21 +145,21 @@ func (l *Login) ConfirmName(ctx context.Context, text string) error {
 func (l *Login) NewPassword(ctx context.Context, text string) error {
 	// TODO: validate password
 	l.p.SetPassword(text)
-	l.p.Write("Confirm your password and type it again: ")
+	l.p.Write(ctx, "Confirm your password and type it again: ")
 	return l.state.SetState("CONFIRM_PASSWORD")
 }
 
 // ConfirmPassword step.
 func (l *Login) ConfirmPassword(ctx context.Context, text string) error {
 	if !l.p.IsPassword(text) {
-		l.p.Write("Passwords do not match\n")
-		l.p.Write("Let's try this again. Please give me a new password: ")
+		l.p.Write(ctx, "Passwords do not match\n")
+		l.p.Write(ctx, "Let's try this again. Please give me a new password: ")
 		return l.state.SetState("NEW_PASSWORD")
 	}
-	l.p.Write("Entering the world!")
+	l.p.Write(ctx, "Entering the world!")
 	l.p.Game(ctx)
 	Atlas.AddPlayer(l.p)
-	l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
+	l.p.ToRoom(ctx, Atlas.GetRoom(0, 0, 0))
 	l.p.Command("look")
 	return nil
 }

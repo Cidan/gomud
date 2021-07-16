@@ -93,45 +93,45 @@ func (g *Game) Read(ctx context.Context, text string) error {
 
 // DoLook Look at the current room, an object, a player, or an NPC
 func (g *Game) DoLook(ctx context.Context, args ...string) error {
-	room := g.p.GetRoom()
+	room := g.p.GetRoom(ctx)
 
 	// Display the room name.
-	g.p.Buffer("\n\n%s\n", room.GetName())
+	g.p.Buffer(ctx, "\n\n%s\n", room.GetName())
 
 	// Display exits.
 	var exitFound bool
-	g.p.Buffer("{c[Exits:")
+	g.p.Buffer(ctx, "{c[Exits:")
 	for _, dir := range exitDirections {
-		if g.p.CanExit(dir) {
-			g.p.Buffer(" %s", Atlas.dirToName(dir))
+		if g.p.CanExit(ctx, dir) {
+			g.p.Buffer(ctx, " %s", Atlas.dirToName(dir))
 			exitFound = true
 		}
 	}
 	if !exitFound {
-		g.p.Buffer(" none")
+		g.p.Buffer(ctx, " none")
 	}
-	g.p.Buffer("]{x\n")
+	g.p.Buffer(ctx, "]{x\n")
 
 	// Display the automap if the player has it enabled.
-	if g.p.Flag("automap") {
-		g.p.Buffer("\n%s\n\n", g.p.Map(5))
+	if g.p.Flag(ctx, "automap") {
+		g.p.Buffer(ctx, "\n%s\n\n", g.p.Map(ctx, 5))
 	} else {
-		g.p.Buffer("\n")
+		g.p.Buffer(ctx, "\n")
 	}
 
 	// Show the room description.
-	g.p.Buffer("  %s\n", room.GetDescription())
+	g.p.Buffer(ctx, "  %s\n", room.GetDescription())
 
 	// List all the players in the room.
 	room.AllPlayers(func(uuid string, rp *Player) {
 		if rp == g.p {
 			return
 		}
-		g.p.Buffer("\n%s\n", rp.PlayerDescription())
+		g.p.Buffer(ctx, "\n%s\n", rp.PlayerDescription())
 	})
 
 	// Flush our buffered output to the player.
-	g.p.Flush()
+	g.p.Flush(ctx)
 	return nil
 }
 
@@ -139,78 +139,78 @@ func (g *Game) DoLook(ctx context.Context, args ...string) error {
 func (g *Game) DoSave(ctx context.Context, args ...string) error {
 	err := g.p.Save()
 	if err == nil {
-		g.p.Write("Your player has been saved.")
+		g.p.Write(ctx, "Your player has been saved.")
 	}
 	return err
 }
 
 // DoQuit will exit the player from the game world.
 func (g *Game) DoQuit(ctx context.Context, args ...string) error {
-	g.p.Write("See ya!\n")
-	g.p.Stop()
+	g.p.Write(ctx, "See ya!\n")
+	g.p.Stop(ctx)
 	return nil
 }
 
 // DoBuild enables build mode for the player.
 func (g *Game) DoBuild(ctx context.Context, args ...string) error {
 	g.p.Build(ctx)
-	g.p.Write("Entering build mode.")
+	g.p.Write(ctx, "Entering build mode.")
 	return nil
 }
 
 // doDir for moving a player in a direction or through a portal.
-func (g *Game) doDir(dir direction) {
-	room := g.p.GetRoom()
+func (g *Game) doDir(ctx context.Context, dir direction) {
+	room := g.p.GetRoom(ctx)
 
-	if g.p.CanExit(dir) {
+	if g.p.CanExit(ctx, dir) {
 		target := room.LinkedRoom(dir)
-		g.p.ToRoom(target)
+		g.p.ToRoom(ctx, target)
 		g.p.Command("look")
 		return
 	}
 
 	if room.IsExitClosed(dir) {
-		g.p.Write("The exit %s is closed!", Atlas.dirToName(dir))
+		g.p.Write(ctx, "The exit %s is closed!", Atlas.dirToName(dir))
 		return
 	}
 
-	g.p.Write("You can't go that way!")
+	g.p.Write(ctx, "You can't go that way!")
 	return
 }
 
 // DoNorth moves the player north.
 func (g *Game) DoNorth(ctx context.Context, args ...string) error {
-	g.doDir(dirNorth)
+	g.doDir(ctx, dirNorth)
 	return nil
 }
 
 // DoEast moves the player east.
 func (g *Game) DoEast(ctx context.Context, args ...string) error {
-	g.doDir(dirEast)
+	g.doDir(ctx, dirEast)
 	return nil
 }
 
 // DoSouth moves the player south.
 func (g *Game) DoSouth(ctx context.Context, args ...string) error {
-	g.doDir(dirSouth)
+	g.doDir(ctx, dirSouth)
 	return nil
 }
 
 // DoWest moves the player west.
 func (g *Game) DoWest(ctx context.Context, args ...string) error {
-	g.doDir(dirWest)
+	g.doDir(ctx, dirWest)
 	return nil
 }
 
 // DoUp moves the player up.
 func (g *Game) DoUp(ctx context.Context, args ...string) error {
-	g.doDir(dirUp)
+	g.doDir(ctx, dirUp)
 	return nil
 }
 
 // DoDown moves the player down.
 func (g *Game) DoDown(ctx context.Context, args ...string) error {
-	g.doDir(dirDown)
+	g.doDir(ctx, dirDown)
 	return nil
 }
 
@@ -219,21 +219,21 @@ func (g *Game) DoSay(ctx context.Context, args ...string) error {
 	p := g.p
 
 	if len(args) == 0 {
-		p.Write("Say what?")
+		p.Write(ctx, "Say what?")
 		return nil
 	}
 
-	room := p.GetRoom()
+	room := p.GetRoom(ctx)
 	if room == nil {
 		return fmt.Errorf("player %s not in a valid room", p.GetName())
 	}
 	text := strings.Join(args, " ")
 	room.AllPlayers(func(uuid string, rp *Player) {
 		if rp == p {
-			rp.Write("{yYou say, {x'%s{x'", text)
+			rp.Write(ctx, "{yYou say, {x'%s{x'", text)
 			return
 		}
-		rp.Write("{y%s says, {x'%s{x'", p.GetName(), text)
+		rp.Write(ctx, "{y%s says, {x'%s{x'", p.GetName(), text)
 	})
 	return nil
 }
@@ -241,24 +241,24 @@ func (g *Game) DoSay(ctx context.Context, args ...string) error {
 // DoPrompt will either enable/disable a user prompt, or set the prompt string.
 func (g *Game) DoPrompt(ctx context.Context, args ...string) error {
 	if len(args) == 0 {
-		if v := g.p.ToggleFlag("prompt"); v {
-			g.p.Write("Prompt enabled.")
+		if v := g.p.ToggleFlag(ctx, "prompt"); v {
+			g.p.Write(ctx, "Prompt enabled.")
 		} else {
-			g.p.Write("Prompt disabled.")
+			g.p.Write(ctx, "Prompt disabled.")
 		}
 		return nil
 	}
 	g.p.SetPrompt(strings.Join(args, " "))
-	g.p.Write("Prompt set.")
+	g.p.Write(ctx, "Prompt set.")
 	return nil
 }
 
 // DoColor will toggle the color flag for a player.
 func (g *Game) DoColor(ctx context.Context, args ...string) error {
-	if v := g.p.ToggleFlag("color"); v {
-		g.p.Write("{gColor enabled!{x")
+	if v := g.p.ToggleFlag(ctx, "color"); v {
+		g.p.Write(ctx, "{gColor enabled!{x")
 	} else {
-		g.p.Write("Color disabled :(")
+		g.p.Write(ctx, "Color disabled :(")
 	}
 	return nil
 }
@@ -270,17 +270,17 @@ func (g *Game) DoMap(ctx context.Context, args ...string) error {
 	if len(args) > 0 {
 		switch {
 		case args[0] == "off":
-			p.DisableFlag("automap")
-			p.Write("Automap turned off.")
+			p.DisableFlag(ctx, "automap")
+			p.Write(ctx, "Automap turned off.")
 			return nil
 		case args[0] == "on":
-			p.EnableFlag("automap")
-			p.Write("Automap turned on.")
+			p.EnableFlag(ctx, "automap")
+			p.Write(ctx, "Automap turned on.")
 			return nil
 		default:
 			r, err := strconv.Atoi(args[0])
 			if err != nil {
-				p.Write("You must specify a number for your map size, i.e. 'map 5'")
+				p.Write(ctx, "You must specify a number for your map size, i.e. 'map 5'")
 			}
 			radius = int64(r)
 		}
@@ -288,6 +288,6 @@ func (g *Game) DoMap(ctx context.Context, args ...string) error {
 	if radius > 100 || radius == 0 {
 		radius = int64(100)
 	}
-	g.p.Write(p.Map(radius))
+	g.p.Write(ctx, p.Map(ctx, radius))
 	return nil
 }

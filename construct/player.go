@@ -158,6 +158,10 @@ func (p *Player) SetConnection(ctx context.Context, c net.Conn) {
 	}(s)
 }
 
+func (p *Player) Context() context.Context {
+	return p.ctx
+}
+
 // Disconnect this player without unloading them from the world.
 func (p *Player) Disconnect() {
 	p.connection.Close()

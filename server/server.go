@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/Cidan/gomud/construct"
+	"github.com/Cidan/gomud/lock"
 	"github.com/Cidan/gomud/util"
 
 	"github.com/rs/zerolog/log"
@@ -26,7 +27,8 @@ func (s *Server) handleConnection(c net.Conn) {
 		Str("address", c.RemoteAddr().String()).
 		Msg("New connection")
 	p := construct.NewPlayer()
-	p.SetConnection(c)
+	ctx := lock.Context(p.Context(), p.GetUUID()+"incomming_conn")
+	p.SetConnection(ctx, c)
 	// This blocks as it starts the interp loop
 	p.Start()
 }
