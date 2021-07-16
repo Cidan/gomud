@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Cidan/gomud/config"
+	"github.com/Cidan/gomud/lock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,8 @@ func testLoginNewUser(t *testing.T, name string) (*bufio.Reader, *bufio.Writer) 
 
 	client, server := net.Pipe()
 	p := NewPlayer()
-	p.SetConnection(server)
+	ctx := lock.Context(p.Context(), p.GetUUID()+"incomming_conn")
+	p.SetConnection(ctx, server)
 	go p.Start()
 
 	reader := bufio.NewReader(client)
@@ -55,7 +57,8 @@ func testLoginUser(t *testing.T, name string) (*bufio.Reader, *bufio.Writer) {
 
 	client, server := net.Pipe()
 	p := NewPlayer()
-	p.SetConnection(server)
+	ctx := lock.Context(p.Context(), p.GetUUID()+"incomming_conn")
+	p.SetConnection(ctx, server)
 	go p.Start()
 
 	reader := bufio.NewReader(client)

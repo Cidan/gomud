@@ -1,6 +1,7 @@
 package construct
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -118,7 +119,7 @@ func NewRoom() *Room {
 // the game, and shunting players in a random open direction.
 // If no direction is available, the player is returned to 0,0,0
 // for now, until home rooms are implemented.
-func (r *Room) Delete() error {
+func (r *Room) Delete(ctx context.Context) error {
 	// Lock globally when deleting a room. This prevents a race where
 	// multiple rooms may be deleted at once, causing weird races where
 	// players would not exist in a room at all.
@@ -156,7 +157,7 @@ func (r *Room) Delete() error {
 	// Move all player to an adjecent room.
 	if toRoom != nil {
 		for _, p := range r.players {
-			p.ToRoom(toRoom)
+			p.ToRoom(ctx, toRoom)
 		}
 	}
 
