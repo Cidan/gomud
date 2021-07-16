@@ -440,9 +440,7 @@ func (p *Player) SetPassword(password string) {
 
 // SetInterp for a player.
 func (p *Player) setInterp(ctx context.Context, i Interp) {
-	fmt.Printf("about to lock\n")
 	p.lock.Lock(ctx)
-	fmt.Printf("in the lock\n")
 	p.currentInterp = i
 	p.lock.Unlock(ctx)
 }

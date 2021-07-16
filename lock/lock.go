@@ -35,7 +35,6 @@ func (l *Lock) Lock(ctx context.Context) bool {
 		}
 		// Allow other threads to run so we don't deadlock.
 		runtime.Gosched()
-		//time.Sleep(1 * time.Millisecond)
 	}
 }
 
