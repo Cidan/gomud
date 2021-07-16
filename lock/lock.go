@@ -8,13 +8,17 @@ import (
 )
 
 type LockFn func(ctx context.Context)
+type LockKey string
 
 type Lock struct {
 	id     string
+	lockid string
 	locker uint32
 	chk    sync.Mutex
-	// This context is used for reentrant locking.
-	ctx *context.Context
+}
+
+func Context(parent context.Context, id string) context.Context {
+	return context.WithValue(parent, LockKey("id"), id)
 }
 
 func New(id string) *Lock {
@@ -47,19 +51,21 @@ func (l *Lock) TryLock(ctx context.Context, fn LockFn) {
 func (l *Lock) doLock(ctx context.Context) bool {
 	l.chk.Lock()
 	defer l.chk.Unlock()
-	if atomic.CompareAndSwapUint32(&l.locker, 0, 1) || l.ctx == &ctx {
-		l.ctx = &ctx
+
+	if atomic.CompareAndSwapUint32(&l.locker, 0, 1) && (l.lockid == "" || l.lockid == ctx.Value(LockKey("id"))) {
+		l.lockid = ctx.Value(LockKey("id")).(string)
 		return true
 	}
+	atomic.CompareAndSwapUint32(&l.locker, 1, 0)
 	return false
 }
 
 func (l *Lock) doUnlock(ctx context.Context) bool {
 	l.chk.Lock()
 	defer l.chk.Unlock()
-	if !atomic.CompareAndSwapUint32(&l.locker, 1, 0) || l.ctx != &ctx {
+	if !atomic.CompareAndSwapUint32(&l.locker, 1, 0) || l.lockid != ctx.Value(LockKey("id")) {
 		return false
 	}
-	l.ctx = nil
+	l.lockid = ""
 	return true
 }

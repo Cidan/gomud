@@ -181,7 +181,7 @@ func (p *Player) Start() {
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
 	p.textInterp = NewTextInterp(p)
-	p.Login(p.ctx)
+	p.Login(lock.Context(p.ctx, "login"))
 
 	p.Write("Welcome, by what name are you known?")
 
@@ -203,11 +203,10 @@ func (p *Player) Start() {
 				break
 			}
 			str = strings.TrimSpace(str)
-			ctx, cancel := context.WithCancel(p.ctx)
+			ctx := lock.Context(p.ctx, "interp")
 			p.lock.Lock(ctx)
 			err := p.currentInterp.Read(ctx, str)
 			p.lock.Unlock(ctx)
-			cancel()
 			switch err {
 			case ErrCommandNotFound:
 				p.Write("Huh?")
@@ -449,7 +448,9 @@ func (p *Player) SetPassword(password string) {
 
 // SetInterp for a player.
 func (p *Player) setInterp(ctx context.Context, i Interp) {
+	fmt.Printf("about to lock\n")
 	p.lock.Lock(ctx)
+	fmt.Printf("in the lock\n")
 	p.currentInterp = i
 	p.lock.Unlock(ctx)
 }
