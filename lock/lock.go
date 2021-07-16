@@ -2,9 +2,9 @@ package lock
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 type LockFn func(ctx context.Context)
@@ -33,7 +33,9 @@ func (l *Lock) Lock(ctx context.Context) bool {
 		if l.doLock(ctx) {
 			return true
 		}
-		time.Sleep(1 * time.Millisecond)
+		// Allow other threads to run so we don't deadlock.
+		runtime.Gosched()
+		//time.Sleep(1 * time.Millisecond)
 	}
 }
 

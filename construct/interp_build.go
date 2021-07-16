@@ -79,10 +79,10 @@ func (b *BuildInterp) Read(ctx context.Context, text string) error {
 	return b.p.gameInterp.commands.Process(ctx, all[0], all[1:]...)
 }
 
-func (b *BuildInterp) doDigDir(dir direction) error {
-	currentRoom := b.p.GetRoom()
+func (b *BuildInterp) doDigDir(ctx context.Context, dir direction) error {
+	currentRoom := b.p.GetRoom(ctx)
 	if currentRoom.PhysicalRoom(dir) != nil {
-		b.p.Write("There's already a room '%s'.\n", Atlas.dirToName(dir))
+		b.p.Write(ctx, "There's already a room '%s'.\n", Atlas.dirToName(dir))
 		return nil
 	}
 
@@ -113,31 +113,31 @@ func (b *BuildInterp) doDigDir(dir direction) error {
 
 	Atlas.AddRoom(room)
 
-	b.p.gameInterp.doDir(dir)
+	b.p.gameInterp.doDir(ctx, dir)
 	return nil
 }
 
 // DoDig will create a new room in the direction the player specifies.
 func (b *BuildInterp) DoDig(ctx context.Context, args ...string) error {
 	if len(args) == 0 || args[0] == "" {
-		b.p.Write("Which direction do you want to dig?")
+		b.p.Write(ctx, "Which direction do you want to dig?")
 		return nil
 	}
 	switch args[0] {
 	case "north", "n":
-		return b.doDigDir(dirNorth)
+		return b.doDigDir(ctx, dirNorth)
 	case "east", "e":
-		return b.doDigDir(dirEast)
+		return b.doDigDir(ctx, dirEast)
 	case "south", "s":
-		return b.doDigDir(dirSouth)
+		return b.doDigDir(ctx, dirSouth)
 	case "west", "w":
-		return b.doDigDir(dirWest)
+		return b.doDigDir(ctx, dirWest)
 	case "up", "u":
-		return b.doDigDir(dirUp)
+		return b.doDigDir(ctx, dirUp)
 	case "down", "d":
-		return b.doDigDir(dirDown)
+		return b.doDigDir(ctx, dirDown)
 	default:
-		b.p.Write("That's not a valid direction to dig in.")
+		b.p.Write(ctx, "That's not a valid direction to dig in.")
 		return nil
 	}
 }
@@ -145,17 +145,17 @@ func (b *BuildInterp) DoDig(ctx context.Context, args ...string) error {
 // DoBuild deactivates build mode.
 func (b *BuildInterp) DoBuild(ctx context.Context, args ...string) error {
 	b.p.Game(ctx)
-	b.p.Write("Build mode deactivated.")
+	b.p.Write(ctx, "Build mode deactivated.")
 	return nil
 }
 
 // Autobuild enables autobuild, which will automatically cause the player
 // to dig in the direction of their movement.
 func (b *BuildInterp) Autobuild(ctx context.Context, args ...string) error {
-	if v := b.p.ToggleFlag("autobuild"); v {
-		b.p.Write("Autobuild has been enabled.")
+	if v := b.p.ToggleFlag(ctx, "autobuild"); v {
+		b.p.Write(ctx, "Autobuild has been enabled.")
 	} else {
-		b.p.Write("Autobuild has been disabled.")
+		b.p.Write(ctx, "Autobuild has been disabled.")
 	}
 	return nil
 }
@@ -163,101 +163,101 @@ func (b *BuildInterp) Autobuild(ctx context.Context, args ...string) error {
 func (b *BuildInterp) DoNorth(ctx context.Context, args ...string) error {
 	p := b.p
 	g := p.gameInterp
-	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirNorth) != nil {
-		g.doDir(dirNorth)
+	if !p.Flag(ctx, "autobuild") || p.GetRoom(ctx).PhysicalRoom(dirNorth) != nil {
+		g.doDir(ctx, dirNorth)
 		return nil
 	}
-	return b.doDigDir(dirNorth)
+	return b.doDigDir(ctx, dirNorth)
 }
 func (b *BuildInterp) DoSouth(ctx context.Context, args ...string) error {
 	p := b.p
 	g := p.gameInterp
-	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirSouth) != nil {
-		g.doDir(dirSouth)
+	if !p.Flag(ctx, "autobuild") || p.GetRoom(ctx).PhysicalRoom(dirSouth) != nil {
+		g.doDir(ctx, dirSouth)
 		return nil
 	}
-	return b.doDigDir(dirSouth)
+	return b.doDigDir(ctx, dirSouth)
 }
 func (b *BuildInterp) DoEast(ctx context.Context, args ...string) error {
 	p := b.p
 	g := p.gameInterp
-	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirEast) != nil {
-		g.doDir(dirEast)
+	if !p.Flag(ctx, "autobuild") || p.GetRoom(ctx).PhysicalRoom(dirEast) != nil {
+		g.doDir(ctx, dirEast)
 		return nil
 	}
-	return b.doDigDir(dirEast)
+	return b.doDigDir(ctx, dirEast)
 }
 func (b *BuildInterp) DoWest(ctx context.Context, args ...string) error {
 	p := b.p
 	g := p.gameInterp
-	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirWest) != nil {
-		g.doDir(dirWest)
+	if !p.Flag(ctx, "autobuild") || p.GetRoom(ctx).PhysicalRoom(dirWest) != nil {
+		g.doDir(ctx, dirWest)
 		return nil
 	}
-	return b.doDigDir(dirWest)
+	return b.doDigDir(ctx, dirWest)
 }
 func (b *BuildInterp) DoUp(ctx context.Context, args ...string) error {
 	p := b.p
 	g := p.gameInterp
-	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirUp) != nil {
-		g.doDir(dirUp)
+	if !p.Flag(ctx, "autobuild") || p.GetRoom(ctx).PhysicalRoom(dirUp) != nil {
+		g.doDir(ctx, dirUp)
 		return nil
 	}
-	return b.doDigDir(dirUp)
+	return b.doDigDir(ctx, dirUp)
 }
 func (b *BuildInterp) DoDown(ctx context.Context, args ...string) error {
 	p := b.p
 	g := p.gameInterp
-	if !p.Flag("autobuild") || p.GetRoom().PhysicalRoom(dirDown) != nil {
-		g.doDir(dirDown)
+	if !p.Flag(ctx, "autobuild") || p.GetRoom(ctx).PhysicalRoom(dirDown) != nil {
+		g.doDir(ctx, dirDown)
 		return nil
 	}
-	return b.doDigDir(dirDown)
+	return b.doDigDir(ctx, dirDown)
 }
 
 func (b *BuildInterp) DoSet(ctx context.Context, args ...string) error {
 	if len(args) == 0 {
-		b.p.Write("Set what?")
+		b.p.Write(ctx, "Set what?")
 		return nil
 	}
 	args = strings.SplitN(args[0], " ", 2)
 	switch args[0] {
 	case "room":
-		return b.setRoom(args[1:]...)
+		return b.setRoom(ctx, args[1:]...)
 	default:
-		b.p.Write("No such thing to set.")
+		b.p.Write(ctx, "No such thing to set.")
 		return nil
 	}
 }
 
-func (b *BuildInterp) setRoom(args ...string) error {
+func (b *BuildInterp) setRoom(ctx context.Context, args ...string) error {
 	p := b.p
-	room := p.GetRoom()
+	room := p.GetRoom(ctx)
 
 	if len(args) == 0 {
-		p.Write("What do you want to set on the room?")
+		p.Write(ctx, "What do you want to set on the room?")
 		return nil
 	}
 	args = strings.SplitN(args[0], " ", 2)
 	switch args[0] {
 	case "name":
 		if len(args) < 2 {
-			p.Write("What do you want to set the description to?")
+			p.Write(ctx, "What do you want to set the description to?")
 			return nil
 		}
 		room.SetName(args[1])
-		p.Write("Name set.")
+		p.Write(ctx, "Name set.")
 		return room.Save()
 	case "description":
 		if len(args) < 2 {
-			p.Write("What do you want to set the description to?")
+			p.Write(ctx, "What do you want to set the description to?")
 			return nil
 		}
 		room.SetDescription(args[1])
-		p.Write("Description set.")
+		p.Write(ctx, "Description set.")
 		return room.Save()
 	default:
-		p.Write("There's no such room property to set.")
+		p.Write(ctx, "There's no such room property to set.")
 		return nil
 	}
 
@@ -265,12 +265,12 @@ func (b *BuildInterp) setRoom(args ...string) error {
 
 func (b *BuildInterp) DoEdit(ctx context.Context, args ...string) error {
 	if len(args) == 0 {
-		b.p.Write("What would you like to edit?")
+		b.p.Write(ctx, "What would you like to edit?")
 		return nil
 	}
 	sp := strings.SplitN(args[0], " ", 3)
 	if len(sp) < 2 {
-		b.p.Write("What would you like to edit?")
+		b.p.Write(ctx, "What would you like to edit?")
 		return nil
 	}
 	switch sp[0] {
@@ -282,7 +282,7 @@ func (b *BuildInterp) DoEdit(ctx context.Context, args ...string) error {
 
 func (b *BuildInterp) editRoom(ctx context.Context, field string) error {
 	p := b.p
-	room := p.GetRoom()
+	room := p.GetRoom(ctx)
 
 	switch field {
 	case "name":
@@ -292,7 +292,7 @@ func (b *BuildInterp) editRoom(ctx context.Context, field string) error {
 	}
 
 	p.setInterp(ctx, p.textInterp)
-	p.Write("You are now editing text. Type :q to quit, :w to save, and :? for help.")
+	p.Write(ctx, "You are now editing text. Type :q to quit, :w to save, and :? for help.")
 	// TODO(lobato): figure out how to do this.
 	/*
 		go func(ctx context.Context, room *Room) {
