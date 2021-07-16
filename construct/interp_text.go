@@ -36,10 +36,10 @@ func NewTextInterp(p *Player) *TextInterp {
 	return e
 }
 
-func (e *TextInterp) Read(text string) error {
+func (e *TextInterp) Read(ctx context.Context, text string) error {
 	all := strings.SplitN(text, " ", 2)
 	if e.commands.Has(all[0]) {
-		return e.commands.Process(all[0], all[1:]...)
+		return e.commands.Process(ctx, all[0], all[1:]...)
 	}
 	e.quit = false
 	e.buffer += text + "\n"
@@ -62,7 +62,7 @@ func (e *TextInterp) Text() string {
 	return e.buffer
 }
 
-func (e *TextInterp) DoDone(args ...string) error {
+func (e *TextInterp) DoDone(ctx context.Context, args ...string) error {
 	result := strings.TrimSuffix(e.buffer, "\n")
 	*e.field = result
 	e.field = nil
@@ -71,7 +71,7 @@ func (e *TextInterp) DoDone(args ...string) error {
 	return nil
 }
 
-func (e *TextInterp) DoCancel(args ...string) error {
+func (e *TextInterp) DoCancel(ctx context.Context, args ...string) error {
 	if e.quit {
 		e.field = nil
 		e.p.Write("{RCancelling editing, text not saved.{x")

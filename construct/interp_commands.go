@@ -1,12 +1,15 @@
 package construct
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-type commandCallback func(...string) error
+type commandCallback func(context.Context, ...string) error
 
 // Interp type for interpreting player commands.
 type Interp interface {
-	Read(string) error
+	Read(context.Context, string) error
 }
 
 type command struct {
@@ -44,9 +47,9 @@ func (c *commandMap) Add(nc *command) *commandMap {
 	return c
 }
 
-func (c *commandMap) Process(command string, input ...string) error {
+func (c *commandMap) Process(ctx context.Context, command string, input ...string) error {
 	if c.commands[command] != nil {
-		return c.commands[command].Fn(input...)
+		return c.commands[command].Fn(ctx, input...)
 	}
 
 	return ErrCommandNotFound

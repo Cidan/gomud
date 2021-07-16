@@ -1,6 +1,7 @@
 package construct
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"time"
@@ -47,8 +48,8 @@ func NewLoginInterp(p *Player) *Login {
 	return l
 }
 
-func (l *Login) Read(text string) error {
-	return l.state.Process(text)
+func (l *Login) Read(ctx context.Context, text string) error {
+	return l.state.Process(ctx, text)
 }
 
 // ValidateName validates a name input and ensures users have valid names.
@@ -68,7 +69,7 @@ func (l *Login) ValidateName(name string) bool {
 }
 
 // AskName step.
-func (l *Login) AskName(text string) error {
+func (l *Login) AskName(ctx context.Context, text string) error {
 	// Check for save
 	if !l.ValidateName(text) {
 		l.p.Write("That is an invalid name. Your name may contain only a-zA-Z and a single apostophe, and must be less than 16 letters long.\n")
@@ -92,7 +93,7 @@ func (l *Login) AskName(text string) error {
 }
 
 // AskPassword step.
-func (l *Login) AskPassword(text string) error {
+func (l *Login) AskPassword(ctx context.Context, text string) error {
 	if !l.p.IsPassword(text) {
 		l.p.Write("Wrong password. Bye.")
 		l.p.Stop()
@@ -124,13 +125,13 @@ func (l *Login) AskPassword(text string) error {
 		l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
 	}
 
-	l.p.Game()
+	l.p.Game(ctx)
 	l.p.Command("look")
 	return nil
 }
 
 // ConfirmName step.
-func (l *Login) ConfirmName(text string) error {
+func (l *Login) ConfirmName(ctx context.Context, text string) error {
 	if text != "yes" && text != "y" {
 		l.p.Write("Okay, so what's your name?")
 		return l.state.SetState("ASK_NAME")
@@ -141,7 +142,7 @@ func (l *Login) ConfirmName(text string) error {
 }
 
 // NewPassword step.
-func (l *Login) NewPassword(text string) error {
+func (l *Login) NewPassword(ctx context.Context, text string) error {
 	// TODO: validate password
 	l.p.SetPassword(text)
 	l.p.Write("Confirm your password and type it again: ")
@@ -149,14 +150,14 @@ func (l *Login) NewPassword(text string) error {
 }
 
 // ConfirmPassword step.
-func (l *Login) ConfirmPassword(text string) error {
+func (l *Login) ConfirmPassword(ctx context.Context, text string) error {
 	if !l.p.IsPassword(text) {
 		l.p.Write("Passwords do not match\n")
 		l.p.Write("Let's try this again. Please give me a new password: ")
 		return l.state.SetState("NEW_PASSWORD")
 	}
 	l.p.Write("Entering the world!")
-	l.p.Game()
+	l.p.Game(ctx)
 	Atlas.AddPlayer(l.p)
 	l.p.ToRoom(Atlas.GetRoom(0, 0, 0))
 	l.p.Command("look")

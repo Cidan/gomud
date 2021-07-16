@@ -1,12 +1,13 @@
 package state
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 )
 
-type EventCallback func(string) error
+type EventCallback func(context.Context, string) error
 
 type Event struct {
 	Name string
@@ -43,11 +44,11 @@ func (s *State) SetState(name string) error {
 	return nil
 }
 
-func (s *State) Process(text string) error {
+func (s *State) Process(ctx context.Context, text string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if s.states[s.current] == nil {
 		return errors.New("Invalid state set")
 	}
-	return s.states[s.current].Fn(text)
+	return s.states[s.current].Fn(ctx, text)
 }

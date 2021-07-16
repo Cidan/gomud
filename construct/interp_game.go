@@ -1,6 +1,7 @@
 package construct
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -75,7 +76,7 @@ func NewGameInterp(p *Player) *Game {
 	return g
 }
 
-func (g *Game) Read(text string) error {
+func (g *Game) Read(ctx context.Context, text string) error {
 	all := strings.SplitN(text, " ", 2)
 	/*
 		log.
@@ -85,13 +86,13 @@ func (g *Game) Read(text string) error {
 			Str("player.name", g.p.GetName()).
 			Msg("Command")
 	*/
-	return g.commands.Process(all[0], all[1:]...)
+	return g.commands.Process(ctx, all[0], all[1:]...)
 }
 
 // Commands go under here.
 
 // DoLook Look at the current room, an object, a player, or an NPC
-func (g *Game) DoLook(args ...string) error {
+func (g *Game) DoLook(ctx context.Context, args ...string) error {
 	room := g.p.GetRoom()
 
 	// Display the room name.
@@ -135,7 +136,7 @@ func (g *Game) DoLook(args ...string) error {
 }
 
 // DoSave will save a player to durable storage.
-func (g *Game) DoSave(args ...string) error {
+func (g *Game) DoSave(ctx context.Context, args ...string) error {
 	err := g.p.Save()
 	if err == nil {
 		g.p.Write("Your player has been saved.")
@@ -144,15 +145,15 @@ func (g *Game) DoSave(args ...string) error {
 }
 
 // DoQuit will exit the player from the game world.
-func (g *Game) DoQuit(args ...string) error {
+func (g *Game) DoQuit(ctx context.Context, args ...string) error {
 	g.p.Write("See ya!\n")
 	g.p.Stop()
 	return nil
 }
 
 // DoBuild enables build mode for the player.
-func (g *Game) DoBuild(args ...string) error {
-	g.p.Build()
+func (g *Game) DoBuild(ctx context.Context, args ...string) error {
+	g.p.Build(ctx)
 	g.p.Write("Entering build mode.")
 	return nil
 }
@@ -178,43 +179,43 @@ func (g *Game) doDir(dir direction) {
 }
 
 // DoNorth moves the player north.
-func (g *Game) DoNorth(args ...string) error {
+func (g *Game) DoNorth(ctx context.Context, args ...string) error {
 	g.doDir(dirNorth)
 	return nil
 }
 
 // DoEast moves the player east.
-func (g *Game) DoEast(args ...string) error {
+func (g *Game) DoEast(ctx context.Context, args ...string) error {
 	g.doDir(dirEast)
 	return nil
 }
 
 // DoSouth moves the player south.
-func (g *Game) DoSouth(args ...string) error {
+func (g *Game) DoSouth(ctx context.Context, args ...string) error {
 	g.doDir(dirSouth)
 	return nil
 }
 
 // DoWest moves the player west.
-func (g *Game) DoWest(args ...string) error {
+func (g *Game) DoWest(ctx context.Context, args ...string) error {
 	g.doDir(dirWest)
 	return nil
 }
 
 // DoUp moves the player up.
-func (g *Game) DoUp(args ...string) error {
+func (g *Game) DoUp(ctx context.Context, args ...string) error {
 	g.doDir(dirUp)
 	return nil
 }
 
 // DoDown moves the player down.
-func (g *Game) DoDown(args ...string) error {
+func (g *Game) DoDown(ctx context.Context, args ...string) error {
 	g.doDir(dirDown)
 	return nil
 }
 
 // DoSay will send a message to all players in the local room.
-func (g *Game) DoSay(args ...string) error {
+func (g *Game) DoSay(ctx context.Context, args ...string) error {
 	p := g.p
 
 	if len(args) == 0 {
@@ -238,7 +239,7 @@ func (g *Game) DoSay(args ...string) error {
 }
 
 // DoPrompt will either enable/disable a user prompt, or set the prompt string.
-func (g *Game) DoPrompt(args ...string) error {
+func (g *Game) DoPrompt(ctx context.Context, args ...string) error {
 	if len(args) == 0 {
 		if v := g.p.ToggleFlag("prompt"); v {
 			g.p.Write("Prompt enabled.")
@@ -253,7 +254,7 @@ func (g *Game) DoPrompt(args ...string) error {
 }
 
 // DoColor will toggle the color flag for a player.
-func (g *Game) DoColor(args ...string) error {
+func (g *Game) DoColor(ctx context.Context, args ...string) error {
 	if v := g.p.ToggleFlag("color"); v {
 		g.p.Write("{gColor enabled!{x")
 	} else {
@@ -263,7 +264,7 @@ func (g *Game) DoColor(args ...string) error {
 }
 
 // DoMap will display a map with a given radius around the player.
-func (g *Game) DoMap(args ...string) error {
+func (g *Game) DoMap(ctx context.Context, args ...string) error {
 	var radius int64
 	p := g.p
 	if len(args) > 0 {

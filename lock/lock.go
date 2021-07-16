@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type LockFn func(ctx context.Context)
@@ -24,16 +25,21 @@ func New(id string) *Lock {
 }
 
 func (l *Lock) Lock(ctx context.Context) bool {
-	return l.doLock(ctx)
+	for {
+		if l.doLock(ctx) {
+			return true
+		}
+		time.Sleep(1 * time.Millisecond)
+	}
 }
 
-func (l *Lock) Unlock() bool {
-	return l.doUnlock()
+func (l *Lock) Unlock(ctx context.Context) bool {
+	return l.doUnlock(ctx)
 }
 
 func (l *Lock) TryLock(ctx context.Context, fn LockFn) {
 	if l.doLock(ctx) {
-		defer l.doUnlock()
+		defer l.doUnlock(ctx)
 		fn(ctx)
 	}
 }
@@ -48,12 +54,12 @@ func (l *Lock) doLock(ctx context.Context) bool {
 	return false
 }
 
-func (l *Lock) doUnlock() bool {
+func (l *Lock) doUnlock(ctx context.Context) bool {
 	l.chk.Lock()
 	defer l.chk.Unlock()
-	if atomic.CompareAndSwapUint32(&l.locker, 1, 0) {
-		l.ctx = nil
-		return true
+	if !atomic.CompareAndSwapUint32(&l.locker, 1, 0) || l.ctx != &ctx {
+		return false
 	}
-	return false
+	l.ctx = nil
+	return true
 }

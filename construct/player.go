@@ -181,7 +181,7 @@ func (p *Player) Start() {
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
 	p.textInterp = NewTextInterp(p)
-	p.Login()
+	p.Login(p.ctx)
 
 	p.Write("Welcome, by what name are you known?")
 
@@ -203,17 +203,11 @@ func (p *Player) Start() {
 				break
 			}
 			str = strings.TrimSpace(str)
-			p.Mutex("interp").RLock()
-			// There are times during login where the interp might be nil.
-			// We loop here, unlocking and giving a chance for the write lock
-			// to apply, until the interp is no longer nil.
-			for p.currentInterp == nil {
-				p.Mutex("interp").RUnlock()
-				time.Sleep(1 * time.Millisecond)
-				p.Mutex("interp").RLock()
-			}
-			err := p.currentInterp.Read(str)
-			p.Mutex("interp").RUnlock()
+			ctx, cancel := context.WithCancel(p.ctx)
+			p.lock.Lock(ctx)
+			err := p.currentInterp.Read(ctx, str)
+			p.lock.Unlock(ctx)
+			cancel()
 			switch err {
 			case ErrCommandNotFound:
 				p.Write("Huh?")
@@ -454,30 +448,25 @@ func (p *Player) SetPassword(password string) {
 }
 
 // SetInterp for a player.
-func (p *Player) setInterp(i Interp) {
-	// SetInterp will always run at some point in the future. This is because
-	// the interp may be locked from active usage, i.e. changing the interp
-	// based on a user command, where the interp is locked.
-	go func(p *Player, i Interp) {
-		p.Mutex("interp").Lock()
-		p.currentInterp = i
-		p.Mutex("interp").Unlock()
-	}(p, i)
+func (p *Player) setInterp(ctx context.Context, i Interp) {
+	p.lock.Lock(ctx)
+	p.currentInterp = i
+	p.lock.Unlock(ctx)
 }
 
 // Build switches a player to the Build interp.
-func (p *Player) Build() {
-	p.setInterp(p.buildInterp)
+func (p *Player) Build(ctx context.Context) {
+	p.setInterp(ctx, p.buildInterp)
 }
 
 // Game switches a player to the Game interp.
-func (p *Player) Game() {
-	p.setInterp(p.gameInterp)
+func (p *Player) Game(ctx context.Context) {
+	p.setInterp(ctx, p.gameInterp)
 }
 
 // Login switches a player to the Login interp.
-func (p *Player) Login() {
-	p.setInterp(p.loginInterp)
+func (p *Player) Login(ctx context.Context) {
+	p.setInterp(ctx, p.loginInterp)
 }
 
 // EnableFlag enables a given flag for a player.
