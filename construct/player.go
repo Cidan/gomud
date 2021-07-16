@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -44,7 +43,6 @@ type Player struct {
 	inRoom         *Room
 	textBuffer     string
 	lock           *lock.Lock
-	mutex          map[string]*sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
 	lastActionTime time.Time
@@ -85,10 +83,6 @@ type roomWalk struct {
 func NewPlayer() *Player {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	mutex := make(map[string]*sync.RWMutex)
-	for _, m := range playerMutextList {
-		mutex[m] = &sync.RWMutex{}
-	}
 	uuid := uuid.NewV4().String()
 	p := &Player{
 		Data: &playerData{
@@ -99,25 +93,19 @@ func NewPlayer() *Player {
 		lastActionTime: time.Now(),
 		input:          make(chan string),
 		lock:           lock.New(uuid),
-		mutex:          mutex,
 		ctx:            ctx,
 		cancel:         cancel,
 	}
-
-	p.setDefaults()
+	ictx := lock.Context(p.ctx, p.GetUUID()+"NewPlayer")
+	p.setDefaults(ictx)
 	return p
 }
 
-// Mutex returns a named mutex for the player.
-func (p *Player) Mutex(mutex string) *sync.RWMutex {
-	return p.mutex[mutex]
-}
-
 // setDefaults sets various defaults for new players.
-func (p *Player) setDefaults() {
-	p.EnableFlag("prompt")
-	p.EnableFlag("color")
-	p.DisableFlag("automap")
+func (p *Player) setDefaults(ctx context.Context) {
+	p.EnableFlag(ctx, "prompt")
+	p.EnableFlag(ctx, "color")
+	p.DisableFlag(ctx, "automap")
 	p.SetPrompt("<%h{gh{x %m{bm{x %v{yv{x>")
 	p.ModifyStat("health", 100, false)
 	p.ModifyStat("mana", 100, false)
@@ -149,10 +137,10 @@ func (p *Player) playerTick() {
 }
 
 // SetConnection sets the player connection object
-func (p *Player) SetConnection(c net.Conn) {
-	p.Mutex("conn").Lock()
+func (p *Player) SetConnection(ctx context.Context, c net.Conn) {
+	p.lock.Lock(ctx)
 	p.connection = c
-	p.Mutex("conn").Unlock()
+	p.lock.Unlock(ctx)
 	s := bufio.NewScanner(c)
 	// Wrap our reader in a channel so that we can select it
 	// in the interp loop. When the connection is closed by p.Stop(),
@@ -163,9 +151,9 @@ func (p *Player) SetConnection(c net.Conn) {
 				break
 			}
 			p.input <- s.Text()
-			p.Mutex("lastAction").Lock()
+			p.lock.Lock(ctx)
 			p.lastActionTime = time.Now()
-			p.Mutex("lastAction").Unlock()
+			p.lock.Unlock(ctx)
 		}
 	}(s)
 }
@@ -181,9 +169,10 @@ func (p *Player) Start() {
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
 	p.textInterp = NewTextInterp(p)
-	p.Login(lock.Context(p.ctx, "login"))
+	ctx := lock.Context(p.ctx, p.GetUUID()+"login")
+	p.Login(ctx)
 
-	p.Write("Welcome, by what name are you known?")
+	p.Write(ctx, "Welcome, by what name are you known?")
 
 	for {
 		select {
@@ -203,13 +192,13 @@ func (p *Player) Start() {
 				break
 			}
 			str = strings.TrimSpace(str)
-			ctx := lock.Context(p.ctx, "interp")
+			ctx := lock.Context(p.ctx, p.GetUUID()+"interp")
 			p.lock.Lock(ctx)
 			err := p.currentInterp.Read(ctx, str)
 			p.lock.Unlock(ctx)
 			switch err {
 			case ErrCommandNotFound:
-				p.Write("Huh?")
+				p.Write(ctx, "Huh?")
 			case nil:
 				break
 			default:
@@ -225,71 +214,72 @@ func (p *Player) Start() {
 }
 
 // Buffer will buffer output text until Flush() is called.
-func (p *Player) Buffer(text string, args ...interface{}) {
-	p.Mutex("buffer").Lock()
-	defer p.Mutex("buffer").Unlock()
+func (p *Player) Buffer(ctx context.Context, text string, args ...interface{}) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	p.textBuffer += fmt.Sprintf(text, args...)
 }
 
 // Flush will write the player buffer to the player and clear the buffer.
-func (p *Player) Flush() {
-	if p.Flag("color") {
+func (p *Player) Flush(ctx context.Context) {
+	if p.Flag(ctx, "color") {
 		p.textBuffer = color.Parse(p.textBuffer)
 	} else {
 		p.textBuffer = color.Strip(p.textBuffer)
 	}
 
-	p.WriteRaw("%s\r\xff\xf9", p.textBuffer)
-	go p.WritePrompt()
-	p.Mutex("buffer").Lock()
+	p.WriteRaw(ctx, "%s\r\xff\xf9", p.textBuffer)
+	p.WritePrompt(ctx)
+
+	p.lock.Lock(ctx)
 	p.textBuffer = ""
-	p.Mutex("buffer").Unlock()
+	p.lock.Unlock(ctx)
 }
 
 // Write output to a player.
-func (p *Player) Write(text string, args ...interface{}) {
+func (p *Player) Write(ctx context.Context, text string, args ...interface{}) {
 	str := fmt.Sprintf(text, args...)
-	if p.Flag("color") {
+	if p.Flag(ctx, "color") {
 		str = color.Parse(str)
 	} else {
 		str = color.Strip(str)
 	}
 
-	p.WriteRaw("%s\r\xff\xf9", str)
-	go p.WritePrompt()
+	p.WriteRaw(ctx, "%s\r\xff\xf9", str)
+	p.WritePrompt(ctx)
 }
 
 // WritePrompt will write the player prompt to the player.
-func (p *Player) WritePrompt() {
+func (p *Player) WritePrompt(ctx context.Context) {
 	str := p.Prompt()
-	if p.Flag("color") {
+	if p.Flag(ctx, "color") {
 		str = color.Parse(str)
 	} else {
 		str = color.Strip(str)
 	}
 
-	p.Mutex("interp").RLock()
+	p.lock.Lock(ctx)
 	if p.currentInterp == p.textInterp {
-		defer p.Mutex("interp").RUnlock()
-		p.WriteRaw("\n[:w to save, :q to quit]\r\xff\xf9")
+		defer p.lock.Unlock(ctx)
+		p.WriteRaw(ctx, "\n[:w to save, :q to quit]\r\xff\xf9")
 		return
 	}
-	p.Mutex("interp").RUnlock()
+	p.lock.Unlock(ctx)
 
 	if p.IsBuilding() {
-		p.BuildPrompt()
+		p.BuildPrompt(ctx)
 		return
 	}
-	if p.ShowPrompt() {
-		p.WriteRaw("\n\n%s\r\xff\xf9", str)
+	if p.ShowPrompt(ctx) {
+		p.WriteRaw(ctx, "\n\n%s\r\xff\xf9", str)
 	}
 }
 
 // BuildPrompt displays the build prompt
-func (p *Player) BuildPrompt() {
-	room := p.GetRoom()
+func (p *Player) BuildPrompt(ctx context.Context) {
+	room := p.GetRoom(ctx)
 	autobuild := "{gtrue{x"
-	if !p.Flag("autobuild") {
+	if !p.Flag(ctx, "autobuild") {
 		autobuild = "{rfalse{x"
 	}
 
@@ -301,19 +291,19 @@ func (p *Player) BuildPrompt() {
 		autobuild,
 	)
 
-	if p.Flag("color") {
+	if p.Flag(ctx, "color") {
 		str = color.Parse(str)
 	} else {
 		str = color.Strip(str)
 	}
 
-	p.WriteRaw(str)
+	p.WriteRaw(ctx, str)
 }
 
 // WriteRaw writes raw text to the player with no transforms.
-func (p *Player) WriteRaw(text string, args ...interface{}) {
-	p.Mutex("conn").RLock()
-	defer p.Mutex("conn").RUnlock()
+func (p *Player) WriteRaw(ctx context.Context, text string, args ...interface{}) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	if conn := p.connection; conn != nil {
 		fmt.Fprintf(p.connection, text, args...)
 	}
@@ -358,7 +348,7 @@ func (p *Player) Load() (bool, error) {
 }
 
 // Stop a player connection and unload the player from the world.
-func (p *Player) Stop() {
+func (p *Player) Stop(ctx context.Context) {
 	// TODO(lobato): Handle error
 	p.Save()
 	p.cancel()
@@ -373,15 +363,17 @@ func (p *Player) Stop() {
 		p.Mutex("room").Unlock()
 	*/
 	// Write a new line to ensure some clients don't buffer the last output.
-	p.WriteRaw("\n")
+	p.WriteRaw(ctx, "\n")
 	Atlas.RemovePlayer(p)
 
 }
 
 // ToRoom moves a player to a room
 // TODO: Eventually, unwind combat, etc.
-func (p *Player) ToRoom(target *Room) bool {
-	room := p.GetRoom()
+func (p *Player) ToRoom(ctx context.Context, target *Room) bool {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
+	room := p.GetRoom(ctx)
 	// Player is already in the room, don't do anything.
 	if room == target {
 		return true
@@ -389,25 +381,21 @@ func (p *Player) ToRoom(target *Room) bool {
 
 	// Remove the player from the current room.
 	if room != nil {
-		p.Mutex("room").Lock()
+		// TODO(lobato): Room lock?
 		room.RemovePlayer(p)
-		p.Mutex("room").Unlock()
 	}
 
-	p.Mutex("room").Lock()
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
-	p.Mutex("room").Unlock()
 	target.AddPlayer(p)
 	return true
 }
 
 // GetRoom returns the room the player is currently in.
-func (p *Player) GetRoom() *Room {
-	p.Mutex("room").RLock()
-	defer p.Mutex("room").RUnlock()
-	target := (*unsafe.Pointer)(unsafe.Pointer(&p.inRoom))
-	return (*Room)(atomic.LoadPointer(target))
+func (p *Player) GetRoom(ctx context.Context) *Room {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
+	return p.inRoom
 }
 
 // Command runs a command through the interp for the player.
@@ -471,23 +459,23 @@ func (p *Player) Login(ctx context.Context) {
 }
 
 // EnableFlag enables a given flag for a player.
-func (p *Player) EnableFlag(key string) {
-	p.Mutex("flag").Lock()
-	defer p.Mutex("flag").Unlock()
+func (p *Player) EnableFlag(ctx context.Context, key string) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	p.Data.Flags[key] = true
 }
 
 // DisableFlag disables a flag for a player.
-func (p *Player) DisableFlag(key string) {
-	p.Mutex("flag").Lock()
-	defer p.Mutex("flag").Unlock()
+func (p *Player) DisableFlag(ctx context.Context, key string) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	p.Data.Flags[key] = false
 }
 
 // ToggleFlag will toggle the flag from it's current state, and return the new state.
-func (p *Player) ToggleFlag(key string) bool {
-	p.Mutex("flag").Lock()
-	defer p.Mutex("flag").Unlock()
+func (p *Player) ToggleFlag(ctx context.Context, key string) bool {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	v, ok := p.Data.Flags[key]
 
 	if !ok || !v {
@@ -500,12 +488,10 @@ func (p *Player) ToggleFlag(key string) bool {
 }
 
 // Flag returns the state of a flag for a player.
-func (p *Player) Flag(key string) bool {
-	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
-	data := (*playerData)(atomic.LoadPointer(target))
-	p.Mutex("flag").RLock()
-	defer p.Mutex("flag").RUnlock()
-	v, ok := data.Flags[key]
+func (p *Player) Flag(ctx context.Context, key string) bool {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
+	v, ok := p.Data.Flags[key]
 	if !ok {
 		return false
 	}
@@ -536,9 +522,9 @@ func (p *Player) SetPrompt(prompt string) {
 }
 
 // ShowPrompt returns true if a prompt should be shown.
-func (p *Player) ShowPrompt() bool {
+func (p *Player) ShowPrompt(ctx context.Context) bool {
 	switch {
-	case p.IsInGame() && p.Flag("prompt"):
+	case p.IsInGame(ctx) && p.Flag(ctx, "prompt"):
 		return true
 	default:
 		return false
@@ -546,9 +532,9 @@ func (p *Player) ShowPrompt() bool {
 }
 
 // IsInGame returns true if the player is in the game world, i.e. not logging in/creating.
-func (p *Player) IsInGame() bool {
-	p.Mutex("interp").RLock()
-	defer p.Mutex("interp").RUnlock()
+func (p *Player) IsInGame(ctx context.Context) bool {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	if p.currentInterp == p.gameInterp || p.currentInterp == p.buildInterp {
 		return true
 	}
@@ -611,8 +597,8 @@ func (p *Player) PlayerDescription() string {
 	return fmt.Sprintf("%s is here.", p.GetName())
 }
 
-func (p *Player) CanExit(dir direction) bool {
-	room := p.GetRoom()
+func (p *Player) CanExit(ctx context.Context, dir direction) bool {
+	room := p.GetRoom(ctx)
 	return room.CanExit(dir)
 }
 
@@ -627,7 +613,7 @@ func setOrModify(base int64, value int64, relative bool) int64 {
 // closed doors, hidden rooms, rooms around the corner, etc. This is a slightly
 // more expensive map method that walks exits instead of coordinates, but offers
 // a much more accurate view.
-func (p *Player) Map(radius int64) string {
+func (p *Player) Map(ctx context.Context, radius int64) string {
 	var output string
 
 	// Create the map array that stores map runes.
@@ -646,7 +632,7 @@ func (p *Player) Map(radius int64) string {
 	// the player starting room as the first room, at the center of the map.
 	rooms := make(chan roomWalk, radius*20)
 
-	room := p.GetRoom()
+	room := p.GetRoom(ctx)
 	if room == nil {
 		return ""
 	}
