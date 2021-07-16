@@ -53,9 +53,11 @@ func (l *Lock) doLock(ctx context.Context) bool {
 	l.chk.Lock()
 	defer l.chk.Unlock()
 
-	if atomic.CompareAndSwapUint32(&l.locker, 0, 1) && (l.lockid == "" || l.lockid == ctx.Value(LockKey("id"))) {
-		l.lockid = ctx.Value(LockKey("id")).(string)
-		return true
+	if atomic.CompareAndSwapUint32(&l.locker, 0, 1) {
+		if l.lockid == "" || l.lockid == ctx.Value(LockKey("id")) {
+			l.lockid = ctx.Value(LockKey("id")).(string)
+			return true
+		}
 	}
 	atomic.CompareAndSwapUint32(&l.locker, 1, 0)
 	return false
