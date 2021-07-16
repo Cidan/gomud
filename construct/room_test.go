@@ -11,8 +11,7 @@ import (
 // another go routine, ensuring room deletes are concurrently safe.
 // This test should be run with race detection via `go test -race -count=3`
 func TestPlayerMovementRace(t *testing.T) {
-	s := testSetupServer(t, 2020)
-	r, w := testLoginNewUser(t, "Playerm", s)
+	r, w := testLoginNewUser(t, "Playerm")
 
 	c := make(chan bool)
 	go func(reader *bufio.Reader, writer *bufio.Writer) {
@@ -35,12 +34,10 @@ func TestPlayerMovementRace(t *testing.T) {
 		}
 	}
 	<-c
-	s.Close()
 }
 
 func TestEditRoom(t *testing.T) {
-	s := testSetupServer(t, 2020)
-	r, w := testLoginNewUser(t, "EditRoom", s)
+	r, w := testLoginNewUser(t, "EditRoom")
 
 	w.WriteString("edit room description\n")
 	assert.Nil(t, w.Flush())
@@ -49,6 +46,4 @@ func TestEditRoom(t *testing.T) {
 	w.WriteString(":w\n")
 	assert.Nil(t, w.Flush())
 	r.ReadString('\r')
-
-	s.Close()
 }

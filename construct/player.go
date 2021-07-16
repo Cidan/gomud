@@ -18,6 +18,7 @@ import (
 
 	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
+	"github.com/Cidan/gomud/lock"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 )
@@ -42,7 +43,7 @@ type Player struct {
 	currentInterp  Interp
 	inRoom         *Room
 	textBuffer     string
-	lock           sync.RWMutex
+	lock           *lock.Lock
 	mutex          map[string]*sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
@@ -88,15 +89,16 @@ func NewPlayer() *Player {
 	for _, m := range playerMutextList {
 		mutex[m] = &sync.RWMutex{}
 	}
+	uuid := uuid.NewV4().String()
 	p := &Player{
 		Data: &playerData{
-			UUID:  uuid.NewV4().String(),
+			UUID:  uuid,
 			Flags: make(map[string]bool),
 			Stats: &playerStats{},
 		},
 		lastActionTime: time.Now(),
 		input:          make(chan string),
-		lock:           sync.RWMutex{},
+		lock:           lock.New(uuid),
 		mutex:          mutex,
 		ctx:            ctx,
 		cancel:         cancel,
@@ -245,7 +247,7 @@ func (p *Player) Flush() {
 	}
 
 	p.WriteRaw("%s\r\xff\xf9", p.textBuffer)
-	p.WritePrompt()
+	go p.WritePrompt()
 	p.Mutex("buffer").Lock()
 	p.textBuffer = ""
 	p.Mutex("buffer").Unlock()
