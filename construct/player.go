@@ -151,9 +151,6 @@ func (p *Player) SetConnection(ctx context.Context, c net.Conn) {
 				break
 			}
 			p.input <- s.Text()
-			p.lock.Lock(ctx)
-			p.lastActionTime = time.Now()
-			p.lock.Unlock(ctx)
 		}
 	}(s)
 }
@@ -199,6 +196,7 @@ func (p *Player) Start() {
 			ctx := lock.Context(p.ctx, p.GetUUID()+"interp")
 			p.lock.Lock(ctx)
 			err := p.currentInterp.Read(ctx, str)
+			p.lastActionTime = time.Now()
 			p.lock.Unlock(ctx)
 			switch err {
 			case ErrCommandNotFound:

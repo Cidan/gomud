@@ -3,7 +3,6 @@ package construct
 import (
 	"bufio"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,13 +19,15 @@ func runCommands(t *testing.T, r *bufio.Reader, w *bufio.Writer, commands []stri
 	for _, command := range commands {
 		w.WriteString(command + "\n")
 		assert.NoError(t, w.Flush())
-		for {
-			recv, err := r.ReadString('\xf9')
-			assert.NoError(t, err)
-			if strings.Contains(recv, "OKPROMPT") {
-				break
+		/*
+			for {
+				recv, err := r.ReadString('\xf9')
+				assert.NoError(t, err)
+				if strings.Contains(recv, "OKPROMPT") {
+					break
+				}
 			}
-		}
+		*/
 		//		recv, err := r.ReadString('\r')
 		//		fmt.Printf("got %s\n", recv)
 		//		assert.NoError(t, err)
@@ -34,6 +35,7 @@ func runCommands(t *testing.T, r *bufio.Reader, w *bufio.Writer, commands []stri
 }
 
 func TestPlayerMap(t *testing.T) {
+	testSetupWorld(t)
 	r, w := testLoginNewUser(t, "PlayerMap")
 	var commands = []string{
 		"dig west",
@@ -44,6 +46,7 @@ func TestPlayerMap(t *testing.T) {
 }
 
 func TestPlayerSaveAndQuit(t *testing.T) {
+	testSetupWorld(t)
 	r, w := testLoginNewUser(t, "SaveAndQuit")
 	var commands = []string{
 		"save",
@@ -53,6 +56,7 @@ func TestPlayerSaveAndQuit(t *testing.T) {
 }
 
 func TestPlayerInterpSwap(t *testing.T) {
+	testSetupWorld(t)
 	r, w := testLoginNewUser(t, "InterSwap")
 	var commands = []string{
 		"build",
@@ -75,7 +79,6 @@ func TestPlayerReconnect(t *testing.T) {
 	r, w := testLoginNewUser(t, "PlayerReconnect")
 	fmt.Printf("on to the real test\n")
 	runCommands(t, r, w, []string{
-		"prompt OKPROMPT",
 		"save",
 	})
 	fmt.Printf("About to try a reconnect\n")
