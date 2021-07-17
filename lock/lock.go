@@ -41,13 +41,6 @@ func (l *Lock) Unlock(ctx context.Context) bool {
 	return l.doUnlock(ctx)
 }
 
-func (l *Lock) TryLock(ctx context.Context, fn LockFn) {
-	if l.doLock(ctx) {
-		defer l.doUnlock(ctx)
-		fn(ctx)
-	}
-}
-
 func (l *Lock) doLock(ctx context.Context) bool {
 	l.chk.Lock()
 	defer l.chk.Unlock()
