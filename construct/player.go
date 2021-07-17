@@ -349,23 +349,18 @@ func (p *Player) Load() (bool, error) {
 
 // Stop a player connection and unload the player from the world.
 func (p *Player) Stop(ctx context.Context) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	// TODO(lobato): Handle error
 	p.Save()
 	p.cancel()
-	target := (*unsafe.Pointer)(unsafe.Pointer(&p.inRoom))
-	atomic.StorePointer(target, nil)
-	/*
-		p.Mutex("room").Lock()
-		if room := p.inRoom; room != nil {
-			room.RemovePlayer(p)
-			p.inRoom = nil
-		}
-		p.Mutex("room").Unlock()
-	*/
+	if room := p.inRoom; room != nil {
+		room.RemovePlayer(ctx, p)
+		p.inRoom = nil
+	}
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.WriteRaw(ctx, "\n")
 	Atlas.RemovePlayer(p)
-
 }
 
 // ToRoom moves a player to a room

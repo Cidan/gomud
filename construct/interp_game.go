@@ -147,7 +147,14 @@ func (g *Game) DoSave(ctx context.Context, args ...string) error {
 // DoQuit will exit the player from the game world.
 func (g *Game) DoQuit(ctx context.Context, args ...string) error {
 	g.p.Write(ctx, "See ya!\n")
+	room := g.p.GetRoom(ctx)
 	g.p.Stop(ctx)
+	room.AllPlayers(ctx, func(uuid string, p *Player) {
+		if g.p == p {
+			return
+		}
+		p.Write(ctx, "%s exits this realm before your eyes.", g.p.GetName())
+	})
 	return nil
 }
 
