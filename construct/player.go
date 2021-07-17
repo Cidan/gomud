@@ -22,8 +22,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var playerMutextList = []string{"flag", "room", "conn", "interp", "buffer", "lastAction"}
-
 func hashPassword(pw string) string {
 	h := sha512.New()
 	io.WriteString(h, pw)
