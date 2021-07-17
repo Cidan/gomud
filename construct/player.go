@@ -382,12 +382,12 @@ func (p *Player) ToRoom(ctx context.Context, target *Room) bool {
 	// Remove the player from the current room.
 	if room != nil {
 		// TODO(lobato): Room lock?
-		room.RemovePlayer(p)
+		room.RemovePlayer(ctx, p)
 	}
 
 	p.inRoom = target
 	p.Data.Room = target.Data.UUID
-	target.AddPlayer(p)
+	target.AddPlayer(ctx, p)
 	return true
 }
 
@@ -597,7 +597,7 @@ func (p *Player) PlayerDescription() string {
 
 func (p *Player) CanExit(ctx context.Context, dir direction) bool {
 	room := p.GetRoom(ctx)
-	return room.CanExit(dir)
+	return room.CanExit(ctx, dir)
 }
 
 func setOrModify(base int64, value int64, relative bool) int64 {
@@ -655,9 +655,9 @@ L:
 					continue
 				}
 
-				if room.room.CanExit(dir) {
+				if room.room.CanExit(ctx, dir) {
 					// There is an exit in this direction, get the room reference by that direction.
-					nextRoom := room.room.LinkedRoom(dir)
+					nextRoom := room.room.LinkedRoom(ctx, dir)
 
 					// If we've already walked that room, skip, otherwise mark.
 					if _, ok := walked[nextRoom.Data.UUID]; ok {

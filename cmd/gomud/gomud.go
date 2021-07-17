@@ -1,23 +1,25 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	_ "net/http/pprof"
 
 	"github.com/Cidan/gomud/construct"
+	"github.com/Cidan/gomud/lock"
 	"github.com/Cidan/gomud/server"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-
-	err := construct.LoadRooms()
+	ctx := lock.Context(context.Background(), "main")
+	err := construct.LoadRooms(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	if construct.Atlas.WorldSize() == 0 {
-		construct.Atlas.MakeDefaultRoomSet()
+		construct.Atlas.MakeDefaultRoomSet(ctx)
 	}
 
 	server := server.New()

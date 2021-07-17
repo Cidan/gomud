@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"sync"
 
 	"github.com/Cidan/gomud/config"
+	"github.com/Cidan/gomud/lock"
 	"github.com/Cidan/gomud/path"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
@@ -42,18 +42,17 @@ type RoomData struct {
 
 // Room is the top level struct for a room.
 type Room struct {
-	Data        *RoomData
-	exitRooms   []*Room
-	players     map[string]*Player
-	playerMutex *sync.RWMutex
-	exitsMutex  *sync.RWMutex
+	Data      *RoomData
+	exitRooms []*Room
+	players   map[string]*Player
+	lock      *lock.Lock
 }
 
 // PlayerList is the callback function signature for listing players in a room.
 type PlayerList func(string, *Player)
 
 // LoadRooms loads all the rooms in the world.
-func LoadRooms() error {
+func LoadRooms(ctx context.Context) error {
 	os.Mkdir(fmt.Sprintf("%s/rooms", config.GetString("save_path")), 0755)
 	files, err := ioutil.ReadDir(fmt.Sprintf("%s/rooms/", config.GetString("save_path")))
 	if err != nil {
@@ -82,7 +81,7 @@ func LoadRooms() error {
 	// movement without global lookups.
 	for _, room := range Atlas.worldMap {
 		for _, dir := range exitDirections {
-			exit := room.Exit(dir)
+			exit := room.Exit(ctx, dir)
 			if exit.Target != "" {
 				room.exitRooms[dir] = Atlas.GetRoomByUUID(exit.Target)
 			}
@@ -100,18 +99,18 @@ func NewRoom() *Room {
 		exits[n] = new(RoomExit)
 	}
 
+	uuid := uuid.NewV4().String()
 	return &Room{
 		Data: &RoomData{
-			UUID:           uuid.NewV4().String(),
+			UUID:           uuid,
 			Name:           "New Room",
 			Description:    "This is a new room, with a new description.",
 			DirectionExits: exits,
 			OtherExits:     make(map[string]*RoomExit),
 		},
-		exitRooms:   make([]*Room, 6),
-		players:     make(map[string]*Player),
-		playerMutex: new(sync.RWMutex),
-		exitsMutex:  new(sync.RWMutex),
+		exitRooms: make([]*Room, 6),
+		players:   make(map[string]*Player),
+		lock:      lock.New(uuid),
 	}
 }
 
@@ -120,6 +119,8 @@ func NewRoom() *Room {
 // If no direction is available, the player is returned to 0,0,0
 // for now, until home rooms are implemented.
 func (r *Room) Delete(ctx context.Context) error {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
 	// Lock globally when deleting a room. This prevents a race where
 	// multiple rooms may be deleted at once, causing weird races where
 	// players would not exist in a room at all.
@@ -131,27 +132,23 @@ func (r *Room) Delete(ctx context.Context) error {
 		if exitRoom == nil {
 			continue
 		}
-		exitRoom.exitsMutex.Lock()
 		// Isolate entry from the target room from other directions.
 		inverse := inverseDirections[exitDirections[dir]]
-		exitRoom.Exit(inverse).Target = ""
-		exitRoom.Exit(inverse).Closed = false
-		exitRoom.Exit(inverse).Wall = false
-		exitRoom.Exit(inverse).Locked = false
-		exitRoom.Exit(inverse).Name = ""
+		exitRoom.Exit(ctx, inverse).Target = ""
+		exitRoom.Exit(ctx, inverse).Closed = false
+		exitRoom.Exit(ctx, inverse).Wall = false
+		exitRoom.Exit(ctx, inverse).Locked = false
+		exitRoom.Exit(ctx, inverse).Name = ""
 		toRoom = exitRoom
 		exitRoom.exitRooms[dir] = nil
-		exitRoom.exitsMutex.Unlock()
 
-		r.exitsMutex.Lock()
 		// Isolate this room from other entries.
-		exit := r.Exit(exitDirections[dir])
+		exit := r.Exit(ctx, exitDirections[dir])
 		exit.Closed = false
 		exit.Door = false
 		exit.Wall = false
 		exit.Target = ""
 		r.exitRooms[dir] = nil
-		r.exitsMutex.Unlock()
 	}
 
 	// Move all player to an adjecent room.
@@ -211,9 +208,9 @@ func (r *Room) Save() error {
 
 // LinkedRoom returns a room to which this room can traverse to using
 // a direction or portal, given the direction/portal name
-func (r *Room) LinkedRoom(dir direction) *Room {
-	r.exitsMutex.Lock()
-	defer r.exitsMutex.Unlock()
+func (r *Room) LinkedRoom(ctx context.Context, dir direction) *Room {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
 	return r.exitRooms[dir]
 }
 
@@ -238,25 +235,23 @@ func (r *Room) PhysicalRoom(dir direction) *Room {
 }
 
 // AddPlayer adds a player to a room.
-func (r *Room) AddPlayer(player *Player) {
-	r.playerMutex.Lock()
-	r.exitsMutex.Lock()
-	defer r.exitsMutex.Unlock()
-	defer r.playerMutex.Unlock()
+func (r *Room) AddPlayer(ctx context.Context, player *Player) {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
 	r.players[player.GetUUID()] = player
 }
 
 // RemovePlayer removes a player from a room.
-func (r *Room) RemovePlayer(player *Player) {
-	r.playerMutex.Lock()
-	defer r.playerMutex.Unlock()
+func (r *Room) RemovePlayer(ctx context.Context, player *Player) {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
 	delete(r.players, player.GetUUID())
 }
 
 // AllPlayers loops through all players in a room and runs the callback function
 // for each player in a concurrent safe manner.
-func (r *Room) AllPlayers(fn PlayerList) {
-	r.playerMutex.RLock()
+func (r *Room) AllPlayers(ctx context.Context, fn PlayerList) {
+	r.lock.Lock(ctx)
 	// Compile a list of players locally and use that as the interator.
 	// This is done so that long running callback functions are localized
 	// and don't block room entrances.
@@ -264,7 +259,7 @@ func (r *Room) AllPlayers(fn PlayerList) {
 	for _, p := range r.players {
 		plist = append(plist, p)
 	}
-	r.playerMutex.RUnlock()
+	r.lock.Unlock(ctx)
 
 	for _, p := range plist {
 		fn(p.GetUUID(), p)
@@ -303,7 +298,7 @@ func (r *Room) Map(radius int64) string {
 
 // WalledMap will generate a map of the area around this room, with walls denoting
 // the barriers between rooms.
-func (r *Room) WalledMap(radius int64) string {
+func (r *Room) WalledMap(ctx context.Context, radius int64) string {
 	gameMap := path.NewMap(radius)
 	startX := r.Data.X - radius
 	startY := r.Data.Y + radius
@@ -319,7 +314,7 @@ func (r *Room) WalledMap(radius int64) string {
 			case mroom == nil:
 				cell.Empty = true
 			default:
-				mroom.pathAround(cell)
+				mroom.pathAround(ctx, cell)
 			}
 			mx++
 		}
@@ -331,7 +326,7 @@ func (r *Room) WalledMap(radius int64) string {
 // GeneratePath will generate a path to the target room. Use the path to navigate to the
 // given room. This is a heavy implementation and should only be used when a path
 // to a room is needed, i.e. hunting another player, mob, or object.
-func (r *Room) GeneratePath(target *Room) *path.Path {
+func (r *Room) GeneratePath(ctx context.Context, target *Room) *path.Path {
 	dx := math.Abs(float64(r.Data.X - target.Data.X))
 	dy := math.Abs(float64(r.Data.Y - target.Data.Y))
 	dz := math.Abs(float64(r.Data.Z - target.Data.Z))
@@ -353,7 +348,7 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 				case mroom == nil:
 					cell.Empty = true
 				default:
-					mroom.pathAround(cell)
+					mroom.pathAround(ctx, cell)
 				}
 			}
 		}
@@ -362,61 +357,75 @@ func (r *Room) GeneratePath(target *Room) *path.Path {
 }
 
 // Set an exit room for this direction.
-func (r *Room) SetExitRoom(dir direction, target *Room) {
-	r.exitsMutex.Lock()
-	defer r.exitsMutex.Unlock()
-	r.Exit(dir).Target = target.Data.UUID
+func (r *Room) SetExitRoom(ctx context.Context, dir direction, target *Room) {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+	r.Exit(ctx, dir).Target = target.Data.UUID
 	r.exitRooms[dir] = target
 }
 
 // Exit returns an exit for a given direction.
-func (r *Room) Exit(dir direction) *RoomExit {
+func (r *Room) Exit(ctx context.Context, dir direction) *RoomExit {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
 	return r.Data.DirectionExits[dir]
 }
 
-func (r *Room) pathAround(cell *path.Cell) {
+func (r *Room) pathAround(ctx context.Context, cell *path.Cell) {
 	for _, dir := range exitDirections {
-		if !r.CanExit(dir) {
+		if !r.CanExit(ctx, dir) {
 			cell.Exit(Atlas.dirToName(dir)).Wall = true
 		}
 	}
 }
 
-func (r *Room) IsExit(dir direction) bool {
-	if r.LinkedRoom(dir) == nil {
+func (r *Room) IsExit(ctx context.Context, dir direction) bool {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+	if r.LinkedRoom(ctx, dir) == nil {
 		return false
 	}
 	return true
 }
 
-func (r *Room) IsExitWall(dir direction) bool {
-	if r.LinkedRoom(dir) == nil {
+func (r *Room) IsExitWall(ctx context.Context, dir direction) bool {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+
+	if r.LinkedRoom(ctx, dir) == nil {
 		return true
 	}
-	return r.Exit(dir).Wall
+	return r.Exit(ctx, dir).Wall
 }
 
-func (r *Room) IsExitClosed(dir direction) bool {
-	if r.LinkedRoom(dir) == nil {
+func (r *Room) IsExitClosed(ctx context.Context, dir direction) bool {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+
+	if r.LinkedRoom(ctx, dir) == nil {
 		return false
 	}
-	return r.Exit(dir).Closed
+	return r.Exit(ctx, dir).Closed
 }
 
-func (r *Room) IsExitDoor(dir direction) bool {
-	if r.LinkedRoom(dir) == nil {
+func (r *Room) IsExitDoor(ctx context.Context, dir direction) bool {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+
+	if r.LinkedRoom(ctx, dir) == nil {
 		return false
 	}
-	return r.Exit(dir).Door
+	return r.Exit(ctx, dir).Door
 }
 
-func (r *Room) CanExit(dir direction) bool {
-	if r.LinkedRoom(dir) == nil {
+func (r *Room) CanExit(ctx context.Context, dir direction) bool {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+
+	if r.LinkedRoom(ctx, dir) == nil {
 		return false
 	}
-	r.exitsMutex.Lock()
-	defer r.exitsMutex.Unlock()
-	exit := r.Exit(dir)
+	exit := r.Exit(ctx, dir)
 	if exit.Closed || exit.Wall {
 		return false
 	}

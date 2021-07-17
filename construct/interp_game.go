@@ -123,7 +123,7 @@ func (g *Game) DoLook(ctx context.Context, args ...string) error {
 	g.p.Buffer(ctx, "  %s\n", room.GetDescription())
 
 	// List all the players in the room.
-	room.AllPlayers(func(uuid string, rp *Player) {
+	room.AllPlayers(ctx, func(uuid string, rp *Player) {
 		if rp == g.p {
 			return
 		}
@@ -163,13 +163,13 @@ func (g *Game) doDir(ctx context.Context, dir direction) {
 	room := g.p.GetRoom(ctx)
 
 	if g.p.CanExit(ctx, dir) {
-		target := room.LinkedRoom(dir)
+		target := room.LinkedRoom(ctx, dir)
 		g.p.ToRoom(ctx, target)
 		g.p.Command("look")
 		return
 	}
 
-	if room.IsExitClosed(dir) {
+	if room.IsExitClosed(ctx, dir) {
 		g.p.Write(ctx, "The exit %s is closed!", Atlas.dirToName(dir))
 		return
 	}
@@ -228,7 +228,7 @@ func (g *Game) DoSay(ctx context.Context, args ...string) error {
 		return fmt.Errorf("player %s not in a valid room", p.GetName())
 	}
 	text := strings.Join(args, " ")
-	room.AllPlayers(func(uuid string, rp *Player) {
+	room.AllPlayers(ctx, func(uuid string, rp *Player) {
 		if rp == p {
 			rp.Write(ctx, "{yYou say, {x'%s{x'", text)
 			return

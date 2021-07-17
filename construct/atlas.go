@@ -1,6 +1,7 @@
 package construct
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -111,13 +112,13 @@ func (a *AtlasData) dirToName(dir direction) string {
 	return dirNames[dir]
 }
 
-func (a *AtlasData) MakeDefaultRoomSet() {
+func (a *AtlasData) MakeDefaultRoomSet(ctx context.Context) {
 	room := NewRoom()
 	room.SetName("The Alpha")
 	room.SetDescription("It all starts here.")
 	room.SetCoordinates(0, 0, 0)
 	for _, dir := range exitDirections {
-		room.Exit(dir).Wall = true
+		room.Exit(ctx, dir).Wall = true
 	}
 
 	err := room.Save()
