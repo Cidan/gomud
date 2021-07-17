@@ -3,6 +3,8 @@ package construct
 import (
 	"context"
 	"strings"
+
+	"github.com/Cidan/gomud/lock"
 )
 
 // TextInterp is the editor interp, which allows for long form
@@ -49,7 +51,7 @@ func (e *TextInterp) Read(ctx context.Context, text string) error {
 
 func (e *TextInterp) Start(field *string) context.Context {
 	e.buffer = ""
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(lock.Context(e.p.ctx, e.p.GetData().UUID+"text_edit"))
 	e.context = ctx
 	e.cancel = cancel
 	e.field = field

@@ -38,7 +38,8 @@ func testLoginNewUser(t *testing.T, name string) (*bufio.Reader, *bufio.Writer) 
 	// Read the login text first.
 	go func() {
 		for {
-			reader.ReadString('\xf9')
+			recv, _ := reader.ReadString('\xf9')
+			fmt.Printf("testLoginNewUser(): got %s\n", recv)
 		}
 	}()
 	/*

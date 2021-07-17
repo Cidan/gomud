@@ -283,16 +283,22 @@ func (b *BuildInterp) DoEdit(ctx context.Context, args ...string) error {
 func (b *BuildInterp) editRoom(ctx context.Context, field string) error {
 	p := b.p
 	room := p.GetRoom(ctx)
-
+	var ectx context.Context
 	switch field {
 	case "name":
-		ctx = p.textInterp.Start(&room.Data.Name)
+		ectx = p.textInterp.Start(&room.Data.Name)
 	case "description":
-		ctx = p.textInterp.Start(&room.Data.Description)
+		ectx = p.textInterp.Start(&room.Data.Description)
 	}
 
 	p.setInterp(ctx, p.textInterp)
 	p.Write(ctx, "You are now editing text. Type :q to quit, :w to save, and :? for help.")
+	go func(ctx context.Context, room *Room) {
+		<-ectx.Done()
+		room.Save()
+		p.setInterp(ectx, p.buildInterp)
+		p.Command("look")
+	}(ectx, room)
 	// TODO(lobato): figure out how to do this.
 	/*
 		go func(ctx context.Context, room *Room) {
