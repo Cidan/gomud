@@ -126,6 +126,13 @@ func (l *Login) AskPassword(ctx context.Context, text string) error {
 	}
 
 	l.p.Game(ctx)
+	l.p.GetRoom(ctx).AllPlayers(ctx, func(uuid string, p *Player) {
+		if p == l.p {
+			return
+		}
+		p.Write(ctx, "%s enters the realm before your eyes.", l.p.GetName())
+	})
+
 	l.p.Command("look")
 	return nil
 }
@@ -160,6 +167,12 @@ func (l *Login) ConfirmPassword(ctx context.Context, text string) error {
 	l.p.Game(ctx)
 	Atlas.AddPlayer(l.p)
 	l.p.ToRoom(ctx, Atlas.GetRoom(0, 0, 0))
+	l.p.GetRoom(ctx).AllPlayers(ctx, func(uuid string, p *Player) {
+		if p == l.p {
+			return
+		}
+		p.Write(ctx, "%s enters the realm before your eyes.", l.p.GetName())
+	})
 	l.p.Command("look")
 	return nil
 }
