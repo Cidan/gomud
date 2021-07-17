@@ -2,7 +2,6 @@ package lock
 
 import (
 	"context"
-	"runtime"
 	"sync"
 )
 
@@ -13,7 +12,7 @@ type Lock struct {
 	id     string
 	lockid string
 	depth  uint32
-	chk    sync.Mutex
+	cnd    *sync.Cond
 }
 
 func Context(parent context.Context, id string) context.Context {
@@ -23,27 +22,30 @@ func Context(parent context.Context, id string) context.Context {
 func New(id string) *Lock {
 	return &Lock{
 		id:  id,
-		chk: sync.Mutex{},
+		cnd: sync.NewCond(&sync.Mutex{}),
 	}
 }
 
 func (l *Lock) Lock(ctx context.Context) bool {
+	l.cnd.L.Lock()
 	for {
 		if l.doLock(ctx) {
+			l.cnd.L.Unlock()
+			l.cnd.Signal()
 			return true
 		}
-		// Allow other threads to run so we don't deadlock.
-		runtime.Gosched()
+		l.cnd.Wait()
 	}
 }
 
 func (l *Lock) Unlock(ctx context.Context) bool {
+	l.cnd.L.Lock()
+	defer l.cnd.L.Unlock()
+	defer l.cnd.Signal()
 	return l.doUnlock(ctx)
 }
 
 func (l *Lock) doLock(ctx context.Context) bool {
-	l.chk.Lock()
-	defer l.chk.Unlock()
 	switch {
 	case l.depth == 0:
 		l.lockid = ctx.Value(LockKey("id")).(string)
@@ -58,8 +60,6 @@ func (l *Lock) doLock(ctx context.Context) bool {
 }
 
 func (l *Lock) doUnlock(ctx context.Context) bool {
-	l.chk.Lock()
-	defer l.chk.Unlock()
 	switch {
 	case l.lockid == ctx.Value(LockKey("id")):
 		l.depth--

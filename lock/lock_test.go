@@ -16,22 +16,22 @@ func TestLockDepthRace(t *testing.T) {
 
 	wg.Add(2)
 	go func(ctx context.Context, data *string) {
-		for i := 0; i < 100000; i++ {
+		for i := 0; i < 1000; i++ {
 			l.Lock(ctx)
 			*data = fmt.Sprintf("%d", i)
 		}
-		for i := 0; i < 100000; i++ {
+		for i := 0; i < 1000; i++ {
 			l.Unlock(ctx)
 		}
 		wg.Done()
 	}(fctx, &data)
 
 	go func(ctx context.Context, data *string) {
-		for i := 0; i < 100000; i++ {
+		for i := 0; i < 1000; i++ {
 			l.Lock(ctx)
 			*data = fmt.Sprintf("%d", i)
 		}
-		for i := 0; i < 100000; i++ {
+		for i := 0; i < 1000; i++ {
 			l.Unlock(ctx)
 		}
 		wg.Done()
