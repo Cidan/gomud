@@ -49,10 +49,10 @@ func (e *TextInterp) Read(ctx context.Context, text string) error {
 	return nil
 }
 
-func (e *TextInterp) Start(field *string) context.Context {
+func (e *TextInterp) Start(ctx context.Context, field *string) context.Context {
 	e.buffer = ""
-	ctx, cancel := context.WithCancel(lock.Context(e.p.ctx, e.p.GetData().UUID+"text_edit"))
-	e.context = ctx
+	ectx, cancel := context.WithCancel(lock.Context(ctx, e.p.GetData(ctx).UUID+"text_edit"))
+	e.context = ectx
 	e.cancel = cancel
 	e.field = field
 	e.quit = false

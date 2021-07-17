@@ -11,9 +11,7 @@ import (
 	"io/ioutil"
 	"net"
 	"strings"
-	"sync/atomic"
 	"time"
-	"unsafe"
 
 	"github.com/Cidan/gomud/color"
 	"github.com/Cidan/gomud/config"
@@ -96,6 +94,11 @@ func NewPlayer() *Player {
 	}
 	ictx := lock.Context(p.ctx, p.GetUUID()+"NewPlayer")
 	p.setDefaults(ictx)
+	/*
+		runtime.SetFinalizer(p, func(p *Player) {
+			fmt.Printf("player GC'd %s", p.GetName())
+		})
+	*/
 	return p
 }
 
@@ -183,6 +186,7 @@ func (p *Player) Start() {
 			if conn := p.connection; conn != nil {
 				conn.Close()
 			}
+			close(p.input)
 			return
 		case str := <-p.input:
 			// TODO(lobato): interp changes?
@@ -251,7 +255,7 @@ func (p *Player) Write(ctx context.Context, text string, args ...interface{}) {
 
 // WritePrompt will write the player prompt to the player.
 func (p *Player) WritePrompt(ctx context.Context) {
-	str := p.Prompt()
+	str := p.Prompt(ctx)
 	if p.Flag(ctx, "color") {
 		str = color.Parse(str)
 	} else {
@@ -325,7 +329,9 @@ func (p *Player) Save() error {
 }
 
 // Load a player from source. Returns true if player was loaded.
-func (p *Player) Load() (bool, error) {
+func (p *Player) Load(ctx context.Context) (bool, error) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName()))
 	data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), fname))
 	// TODO: Make this more robust, need to know if error is because of file
@@ -334,16 +340,10 @@ func (p *Player) Load() (bool, error) {
 		log.Error().Err(err).Str("player", p.Data.Name).Msg("error loading player")
 		return false, nil
 	}
-	var pd playerData
-	err = json.Unmarshal(data, &pd)
+	err = json.Unmarshal(data, &p.Data)
 	if err != nil {
 		return false, err
 	}
-
-	// Load the data via an atomic pointer swap so we don't have to lock.
-	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
-	value := unsafe.Pointer(&pd)
-	atomic.StorePointer(target, value)
 	return true, nil
 }
 
@@ -361,6 +361,9 @@ func (p *Player) Stop(ctx context.Context) {
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.WriteRaw(ctx, "\n")
 	Atlas.RemovePlayer(p)
+	p.buildInterp.p = nil
+	p.gameInterp.p = nil
+	p.loginInterp.p = nil
 }
 
 // ToRoom moves a player to a room
@@ -491,21 +494,22 @@ func (p *Player) Flag(ctx context.Context, key string) bool {
 	return v
 }
 
-func (p *Player) GetData() *playerData {
-	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
-	return (*playerData)(atomic.LoadPointer(target))
+func (p *Player) GetData(ctx context.Context) *playerData {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
+	return p.Data
 }
 
 // Prompt will return the generated/interpreted prompt for this player.
-func (p *Player) Prompt() string {
-	data := p.GetData()
+func (p *Player) Prompt(ctx context.Context) string {
+	data := p.GetData(ctx)
 	str := data.Prompt
-	str = strings.ReplaceAll(str, "%h", fmt.Sprintf("%d", p.GetStat("health")))
-	str = strings.ReplaceAll(str, "%m", fmt.Sprintf("%d", p.GetStat("mana")))
-	str = strings.ReplaceAll(str, "%v", fmt.Sprintf("%d", p.GetStat("move")))
-	str = strings.ReplaceAll(str, "%H", fmt.Sprintf("%d", p.GetStat("max_health")))
-	str = strings.ReplaceAll(str, "%M", fmt.Sprintf("%d", p.GetStat("max_mana")))
-	str = strings.ReplaceAll(str, "%V", fmt.Sprintf("%d", p.GetStat("max_move")))
+	str = strings.ReplaceAll(str, "%h", fmt.Sprintf("%d", p.GetStat(ctx, "health")))
+	str = strings.ReplaceAll(str, "%m", fmt.Sprintf("%d", p.GetStat(ctx, "mana")))
+	str = strings.ReplaceAll(str, "%v", fmt.Sprintf("%d", p.GetStat(ctx, "move")))
+	str = strings.ReplaceAll(str, "%H", fmt.Sprintf("%d", p.GetStat(ctx, "max_health")))
+	str = strings.ReplaceAll(str, "%M", fmt.Sprintf("%d", p.GetStat(ctx, "max_mana")))
+	str = strings.ReplaceAll(str, "%V", fmt.Sprintf("%d", p.GetStat(ctx, "max_move")))
 	return str
 }
 
@@ -543,22 +547,20 @@ func (p *Player) IsBuilding() bool {
 }
 
 // GetStat will return the value of a stat.
-func (p *Player) GetStat(key string) int64 {
-	target := (*unsafe.Pointer)(unsafe.Pointer(&p.Data))
-	data := (*playerData)(atomic.LoadPointer(target))
+func (p *Player) GetStat(ctx context.Context, key string) int64 {
 	switch key {
 	case "health":
-		return data.Stats.Health
+		return p.GetData(ctx).Stats.Health
 	case "mana":
-		return data.Stats.Mana
+		return p.GetData(ctx).Stats.Mana
 	case "move":
-		return data.Stats.Move
+		return p.GetData(ctx).Stats.Move
 	case "max_health":
-		return data.Stats.MaxHealth
+		return p.GetData(ctx).Stats.MaxHealth
 	case "max_mana":
-		return data.Stats.MaxMana
+		return p.GetData(ctx).Stats.MaxMana
 	case "max_move":
-		return data.Stats.MaxMove
+		return p.GetData(ctx).Stats.MaxMove
 	default:
 		// Panic and kill the whole game to avoid player corruption.
 		log.Panic().Str("stat", key).Msg("invalid stat, panic to stop player corruption")

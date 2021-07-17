@@ -286,9 +286,9 @@ func (b *BuildInterp) editRoom(ctx context.Context, field string) error {
 	var ectx context.Context
 	switch field {
 	case "name":
-		ectx = p.textInterp.Start(&room.Data.Name)
+		ectx = p.textInterp.Start(ctx, &room.Data.Name)
 	case "description":
-		ectx = p.textInterp.Start(&room.Data.Description)
+		ectx = p.textInterp.Start(ctx, &room.Data.Description)
 	}
 
 	p.setInterp(ctx, p.textInterp)

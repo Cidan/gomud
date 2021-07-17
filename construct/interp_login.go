@@ -78,7 +78,7 @@ func (l *Login) AskName(ctx context.Context, text string) error {
 	}
 
 	l.p.SetName(text)
-	loaded, err := l.p.Load()
+	loaded, err := l.p.Load(ctx)
 	if err == nil && !loaded {
 		l.p.Write(ctx, "Are you sure you want to be known as %s?", text)
 		return l.state.SetState("CONFIRM_NAME")
