@@ -164,7 +164,23 @@ func (g *Game) doDir(ctx context.Context, dir direction) {
 
 	if g.p.CanExit(ctx, dir) {
 		target := room.LinkedRoom(ctx, dir)
+
+		room.AllPlayers(ctx, func(id string, p *Player) {
+			if p == g.p {
+				return
+			}
+			p.Write(ctx, "%s leaves to the %s.", g.p.GetName(), Atlas.dirToName(dir))
+		})
+
 		g.p.ToRoom(ctx, target)
+
+		target.AllPlayers(ctx, func(id string, p *Player) {
+			if p == g.p {
+				return
+			}
+			p.Write(ctx, "%s enters from the %s.", g.p.GetName(), Atlas.dirToName(inverseDirections[dir]))
+		})
+
 		g.p.Command("look")
 		return
 	}
