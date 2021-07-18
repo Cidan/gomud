@@ -105,7 +105,7 @@ func NewPlayer() *Player {
 func (p *Player) setDefaults(ctx context.Context) {
 	p.EnableFlag(ctx, "prompt")
 	p.EnableFlag(ctx, "color")
-	p.DisableFlag(ctx, "automap")
+	p.EnableFlag(ctx, "automap")
 	p.SetPrompt("<%h{gh{x %m{bm{x %v{yv{x>")
 	p.ModifyStat("health", 100, false)
 	p.ModifyStat("mana", 100, false)

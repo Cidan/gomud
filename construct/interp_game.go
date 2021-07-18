@@ -72,7 +72,7 @@ func NewGameInterp(p *Player) *Game {
 		Fn:   g.DoMap,
 	}).Add(&command{
 		name:  "kill",
-		alias: []string{"k"},
+		alias: []string{"k", "attack"},
 		Fn:    g.DoKill,
 	})
 
