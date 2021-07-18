@@ -70,6 +70,10 @@ func NewGameInterp(p *Player) *Game {
 	}).Add(&command{
 		name: "map",
 		Fn:   g.DoMap,
+	}).Add(&command{
+		name:  "kill",
+		alias: []string{"k"},
+		Fn:    g.DoKill,
 	})
 
 	g.commands = commands
@@ -127,7 +131,7 @@ func (g *Game) DoLook(ctx context.Context, args ...string) error {
 		if rp == g.p {
 			return
 		}
-		g.p.Buffer(ctx, "\n%s\n", rp.PlayerDescription())
+		g.p.Buffer(ctx, "\n%s\n", rp.PlayerDescription(ctx))
 	})
 
 	// Flush our buffered output to the player.
@@ -137,7 +141,7 @@ func (g *Game) DoLook(ctx context.Context, args ...string) error {
 
 // DoSave will save a player to durable storage.
 func (g *Game) DoSave(ctx context.Context, args ...string) error {
-	err := g.p.Save()
+	err := g.p.Save(ctx)
 	if err == nil {
 		g.p.Write(ctx, "Your player has been saved.")
 	}
@@ -153,7 +157,7 @@ func (g *Game) DoQuit(ctx context.Context, args ...string) error {
 		if g.p == p {
 			return
 		}
-		p.Write(ctx, "%s exits this realm before your eyes.", g.p.GetName())
+		p.Write(ctx, "%s exits this realm before your eyes.", g.p.GetName(ctx))
 	})
 	return nil
 }
@@ -176,7 +180,7 @@ func (g *Game) doDir(ctx context.Context, dir direction) {
 			if p == g.p {
 				return
 			}
-			p.Write(ctx, "%s leaves to the %s.", g.p.GetName(), Atlas.dirToName(dir))
+			p.Write(ctx, "%s leaves to the %s.", g.p.GetName(ctx), Atlas.dirToName(dir))
 		})
 
 		g.p.ToRoom(ctx, target)
@@ -185,7 +189,7 @@ func (g *Game) doDir(ctx context.Context, dir direction) {
 			if p == g.p {
 				return
 			}
-			p.Write(ctx, "%s enters from the %s.", g.p.GetName(), Atlas.dirToName(inverseDirections[dir]))
+			p.Write(ctx, "%s enters from the %s.", g.p.GetName(ctx), Atlas.dirToName(inverseDirections[dir]))
 		})
 
 		g.p.Command("look")
@@ -248,7 +252,7 @@ func (g *Game) DoSay(ctx context.Context, args ...string) error {
 
 	room := p.GetRoom(ctx)
 	if room == nil {
-		return fmt.Errorf("player %s not in a valid room", p.GetName())
+		return fmt.Errorf("player %s not in a valid room", p.GetName(ctx))
 	}
 	text := strings.Join(args, " ")
 	room.AllPlayers(ctx, func(uuid string, rp *Player) {
@@ -256,7 +260,7 @@ func (g *Game) DoSay(ctx context.Context, args ...string) error {
 			rp.Write(ctx, "{yYou say, {x'%s{x'", text)
 			return
 		}
-		rp.Write(ctx, "{y%s says, {x'%s{x'", p.GetName(), text)
+		rp.Write(ctx, "{y%s says, {x'%s{x'", p.GetName(ctx), text)
 	})
 	return nil
 }
@@ -312,5 +316,37 @@ func (g *Game) DoMap(ctx context.Context, args ...string) error {
 		radius = int64(100)
 	}
 	g.p.Write(ctx, p.Map(ctx, radius))
+	return nil
+}
+
+func (g *Game) DoKill(ctx context.Context, args ...string) error {
+	p := g.p
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
+
+	room := p.GetRoom(ctx)
+	if room == nil {
+		p.Write(ctx, "You're not really anywhere right now.")
+		return nil
+	}
+
+	if len(args) == 0 {
+		p.Write(ctx, "What do you want to attack?")
+		return nil
+	}
+
+	target := p.TargetPlayer(ctx, args[0], "room")
+
+	if target == nil {
+		p.Write(ctx, "You don't see anything named %s here!", args[0])
+		return nil
+	}
+
+	if target == p {
+		p.Write(ctx, "You bonk your self on the head.")
+		return nil
+	}
+
+	p.Write(ctx, "You target %s and attack!", target.GetName(ctx))
 	return nil
 }

@@ -77,9 +77,8 @@ type roomWalk struct {
 
 // NewPlayer constructs a new player
 func NewPlayer() *Player {
-	ctx, cancel := context.WithCancel(context.Background())
-
 	uuid := uuid.NewV4().String()
+	ctx, cancel := context.WithCancel(lock.Context(context.Background(), uuid))
 	p := &Player{
 		Data: &playerData{
 			UUID:  uuid,
@@ -92,7 +91,7 @@ func NewPlayer() *Player {
 		ctx:            ctx,
 		cancel:         cancel,
 	}
-	ictx := lock.Context(p.ctx, p.GetUUID()+"NewPlayer")
+	ictx := lock.Context(p.ctx, p.Data.UUID+"NewPlayer")
 	p.setDefaults(ictx)
 	/*
 		runtime.SetFinalizer(p, func(p *Player) {
@@ -171,7 +170,7 @@ func (p *Player) Start() {
 	p.gameInterp = NewGameInterp(p)
 	p.loginInterp = NewLoginInterp(p)
 	p.textInterp = NewTextInterp(p)
-	ctx := lock.Context(p.ctx, p.GetUUID()+"login")
+	ctx := lock.Context(p.ctx, p.GetUUID(p.ctx)+"login")
 	p.Login(ctx)
 
 	p.Write(ctx, "Welcome, by what name are you known?")
@@ -195,7 +194,7 @@ func (p *Player) Start() {
 				break
 			}
 			str = strings.TrimSpace(str)
-			ctx := lock.Context(p.ctx, p.GetUUID()+"interp")
+			ctx := lock.Context(p.ctx, p.GetUUID(p.ctx)+"interp")
 			p.lock.Lock(ctx)
 			err := p.currentInterp.Read(ctx, str)
 			p.lastActionTime = time.Now()
@@ -314,13 +313,13 @@ func (p *Player) WriteRaw(ctx context.Context, text string, args ...interface{})
 }
 
 // Save a player to disk
-func (p *Player) Save() error {
+func (p *Player) Save(ctx context.Context) error {
 	data, err := json.Marshal(p.Data)
 	if err != nil {
 		return err
 	}
 
-	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName()))
+	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName(ctx)))
 	err = ioutil.WriteFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), fname), data, 0644)
 	if err != nil {
 		return err
@@ -332,7 +331,7 @@ func (p *Player) Save() error {
 func (p *Player) Load(ctx context.Context) (bool, error) {
 	p.lock.Lock(ctx)
 	defer p.lock.Unlock(ctx)
-	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName()))
+	fname := uuid.NewV5(uuid.NamespaceOID, strings.ToLower(p.GetName(ctx)))
 	data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", config.GetString("save_path"), fname))
 	// TODO: Make this more robust, need to know if error is because of file
 	// not found, or error reading.
@@ -352,18 +351,18 @@ func (p *Player) Stop(ctx context.Context) {
 	p.lock.Lock(ctx)
 	defer p.lock.Unlock(ctx)
 	// TODO(lobato): Handle error
-	p.Save()
-	p.cancel()
+	p.Save(ctx)
 	if room := p.inRoom; room != nil {
 		room.RemovePlayer(ctx, p)
 		p.inRoom = nil
 	}
 	// Write a new line to ensure some clients don't buffer the last output.
 	p.WriteRaw(ctx, "\n")
-	Atlas.RemovePlayer(p)
+	Atlas.RemovePlayer(ctx, p)
 	p.buildInterp.p = nil
 	p.gameInterp.p = nil
 	p.loginInterp.p = nil
+	p.cancel()
 }
 
 // ToRoom moves a player to a room
@@ -406,17 +405,23 @@ func (p *Player) Command(cmd string) error {
 }
 
 // GetUUID of a player.
-func (p *Player) GetUUID() string {
+func (p *Player) GetUUID(ctx context.Context) string {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	return p.Data.UUID
 }
 
 // GetName of a player.
-func (p *Player) GetName() string {
+func (p *Player) GetName(ctx context.Context) string {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	return p.Data.Name
 }
 
 // SetName to a player.
-func (p *Player) SetName(name string) {
+func (p *Player) SetName(ctx context.Context, name string) {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
 	p.Data.Name = name
 }
 
@@ -588,8 +593,8 @@ func (p *Player) ModifyStat(key string, value int64, relative bool) {
 }
 
 // PlayerDescription returns a short description of the player's state, used in `look`, etc.
-func (p *Player) PlayerDescription() string {
-	return fmt.Sprintf("%s is here.", p.GetName())
+func (p *Player) PlayerDescription(ctx context.Context) string {
+	return fmt.Sprintf("%s is here.", p.GetName(ctx))
 }
 
 func (p *Player) CanExit(ctx context.Context, dir direction) bool {
@@ -691,4 +696,24 @@ L:
 	}
 
 	return output
+}
+
+func (p *Player) TargetPlayer(ctx context.Context, prefix, scope string) *Player {
+	p.lock.Lock(ctx)
+	defer p.lock.Unlock(ctx)
+	if prefix == "self" {
+		return p
+	}
+
+	switch scope {
+	case "room":
+		room := p.GetRoom(ctx)
+		if room == nil {
+			return nil
+		}
+
+		return room.GetPlayer(ctx, strings.Title(strings.ToLower(prefix)))
+	default:
+		return nil
+	}
 }

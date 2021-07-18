@@ -27,7 +27,7 @@ func (s *Server) handleConnection(c net.Conn) {
 		Str("address", c.RemoteAddr().String()).
 		Msg("New connection")
 	p := construct.NewPlayer()
-	ctx := lock.Context(p.Context(), p.GetUUID()+"incomming_conn")
+	ctx := lock.Context(p.Context(), p.GetUUID(p.Context())+"incomming_conn")
 	p.SetConnection(ctx, c)
 	// This blocks as it starts the interp loop
 	p.Start()

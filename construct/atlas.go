@@ -69,20 +69,20 @@ func (a *AtlasData) AddRoom(r *Room) {
 
 // AddPlayer adds a player to the global game state. Returns existing
 // player reference if the player already exists globally.
-func (a *AtlasData) AddPlayer(p *Player) *Player {
+func (a *AtlasData) AddPlayer(ctx context.Context, p *Player) *Player {
 	a.allPlayersMutex.Lock()
 	defer a.allPlayersMutex.Unlock()
-	if existingPlayer, ok := a.allPlayers[p.GetName()]; ok {
+	if existingPlayer, ok := a.allPlayers[p.GetName(ctx)]; ok {
 		return existingPlayer
 	}
-	a.allPlayers[p.GetName()] = p
+	a.allPlayers[p.GetName(ctx)] = p
 	return nil
 }
 
-func (a *AtlasData) RemovePlayer(p *Player) {
+func (a *AtlasData) RemovePlayer(ctx context.Context, p *Player) {
 	a.allPlayersMutex.Lock()
 	defer a.allPlayersMutex.Unlock()
-	delete(a.allPlayers, p.GetName())
+	delete(a.allPlayers, p.GetName(ctx))
 }
 
 // WorldSize returns the number of rooms in the world.

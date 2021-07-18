@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"strings"
 
 	"github.com/Cidan/gomud/config"
 	"github.com/Cidan/gomud/lock"
@@ -238,14 +239,14 @@ func (r *Room) PhysicalRoom(dir direction) *Room {
 func (r *Room) AddPlayer(ctx context.Context, player *Player) {
 	r.lock.Lock(ctx)
 	defer r.lock.Unlock(ctx)
-	r.players[player.GetUUID()] = player
+	r.players[player.GetUUID(ctx)] = player
 }
 
 // RemovePlayer removes a player from a room.
 func (r *Room) RemovePlayer(ctx context.Context, player *Player) {
 	r.lock.Lock(ctx)
 	defer r.lock.Unlock(ctx)
-	delete(r.players, player.GetUUID())
+	delete(r.players, player.GetUUID(ctx))
 }
 
 // AllPlayers loops through all players in a room and runs the callback function
@@ -262,8 +263,19 @@ func (r *Room) AllPlayers(ctx context.Context, fn PlayerList) {
 	r.lock.Unlock(ctx)
 
 	for _, p := range plist {
-		fn(p.GetUUID(), p)
+		fn(p.GetUUID(ctx), p)
 	}
+}
+
+func (r *Room) GetPlayer(ctx context.Context, prefix string) *Player {
+	r.lock.Lock(ctx)
+	defer r.lock.Unlock(ctx)
+	for _, p := range r.players {
+		if strings.HasPrefix(p.GetName(ctx), prefix) {
+			return p
+		}
+	}
+	return nil
 }
 
 // Map generates a map with this room at the center, with the given radius.

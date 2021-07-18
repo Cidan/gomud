@@ -21,7 +21,7 @@ func testLoginNewUser(t *testing.T, name string) (*bufio.Reader, *bufio.Writer) 
 
 	client, server := net.Pipe()
 	p := NewPlayer()
-	ctx := lock.Context(p.Context(), p.GetUUID()+"incomming_conn")
+	ctx := lock.Context(p.Context(), p.Data.UUID+"incomming_conn")
 	p.SetConnection(ctx, server)
 	go p.Start()
 
@@ -66,7 +66,7 @@ func testLoginUser(t *testing.T, name string) (*bufio.Reader, *bufio.Writer) {
 
 	client, server := net.Pipe()
 	p := NewPlayer()
-	ctx := lock.Context(p.Context(), p.GetUUID()+"incomming_conn")
+	ctx := lock.Context(p.Context(), p.Data.UUID+"incomming_conn")
 	p.SetConnection(ctx, server)
 	go p.Start()
 

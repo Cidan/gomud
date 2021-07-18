@@ -77,7 +77,7 @@ func (l *Login) AskName(ctx context.Context, text string) error {
 		return nil
 	}
 
-	l.p.SetName(text)
+	l.p.SetName(ctx, text)
 	loaded, err := l.p.Load(ctx)
 	if err == nil && !loaded {
 		l.p.Write(ctx, "Are you sure you want to be known as %s?", text)
@@ -100,7 +100,7 @@ func (l *Login) AskPassword(ctx context.Context, text string) error {
 		return nil
 	}
 	// TODO(lobato): Add player to room before we atlas add player, make this atlas.getplayer and add only after room is not nil
-	if existingPlayer := Atlas.AddPlayer(l.p); existingPlayer != nil {
+	if existingPlayer := Atlas.AddPlayer(ctx, l.p); existingPlayer != nil {
 		l.p.Write(ctx, "An existing player was found, disconnecting that player and attaching you to that session.")
 		existingPlayer.Disconnect()
 		// Quick hack to break the current connection input scanner, which will return
@@ -130,7 +130,7 @@ func (l *Login) AskPassword(ctx context.Context, text string) error {
 		if p == l.p {
 			return
 		}
-		p.Write(ctx, "%s enters the realm before your eyes.", l.p.GetName())
+		p.Write(ctx, "%s enters the realm before your eyes.", l.p.GetName(ctx))
 	})
 
 	l.p.Command("look")
@@ -144,7 +144,7 @@ func (l *Login) ConfirmName(ctx context.Context, text string) error {
 		return l.state.SetState("ASK_NAME")
 	}
 
-	l.p.Write(ctx, "Welcome %s, please give me a password: ", l.p.GetName())
+	l.p.Write(ctx, "Welcome %s, please give me a password: ", l.p.GetName(ctx))
 	return l.state.SetState("NEW_PASSWORD")
 }
 
@@ -165,13 +165,13 @@ func (l *Login) ConfirmPassword(ctx context.Context, text string) error {
 	}
 	l.p.Write(ctx, "Entering the world!")
 	l.p.Game(ctx)
-	Atlas.AddPlayer(l.p)
+	Atlas.AddPlayer(ctx, l.p)
 	l.p.ToRoom(ctx, Atlas.GetRoom(0, 0, 0))
 	l.p.GetRoom(ctx).AllPlayers(ctx, func(uuid string, p *Player) {
 		if p == l.p {
 			return
 		}
-		p.Write(ctx, "%s enters the realm before your eyes.", l.p.GetName())
+		p.Write(ctx, "%s enters the realm before your eyes.", l.p.GetName(ctx))
 	})
 	l.p.Command("look")
 	return nil
