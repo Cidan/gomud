@@ -8,11 +8,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Cidan/gomud/construct"
-	"github.com/Cidan/gomud/lock"
-	"github.com/Cidan/gomud/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/thejerf/suture/v4"
 )
 
 func main() {
@@ -23,23 +21,32 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
-	ctx := lock.Context(context.Background(), "main")
-	err := construct.LoadRooms(ctx)
-	if err != nil {
+	ctx := context.Background()
+	sup := suture.NewSimple("gomud")
+	log.Info().Msg("starting supervisor")
+	if err := sup.Serve(ctx); err != nil {
 		panic(err)
 	}
 
-	if construct.Atlas.WorldSize() == 0 {
-		construct.Atlas.MakeDefaultRoomSet(ctx)
-	}
+	/*
+		ctx := lock.Context(context.Background(), "main")
+		err := construct.LoadRooms(ctx)
+		if err != nil {
+			panic(err)
+		}
 
-	server := server.New()
+		if construct.Atlas.WorldSize() == 0 {
+			construct.Atlas.MakeDefaultRoomSet(ctx)
+		}
 
-	log.Info().Msg("Gomud listening on port 4000.")
-	if err := server.Listen(4000); err != nil {
-		log.Panic().Err(err).Msg("Error while listening for new connections.")
-	}
-	log.Info().Msg("Server shutting down.")
+		server := server.New()
+
+		log.Info().Msg("Gomud listening on port 4000.")
+		if err := server.Listen(4000); err != nil {
+			log.Panic().Err(err).Msg("Error while listening for new connections.")
+		}
+		log.Info().Msg("Server shutting down.")
+	*/
 }
 
 func startDebugServer() {
